@@ -14,7 +14,7 @@ ubuntu
 sudo apt install git -y
 -------------------------------------------------------------------
 
-git cloen https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server.git
+git clone https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server.git
 
 cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 
