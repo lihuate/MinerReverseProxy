@@ -3,7 +3,7 @@
  
 #用法1
 
-wget --no-check-certificate -O shell https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/shell && chmod 777 shell && bash shell
+wget --no-check-certificate -O shell https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
 
 ---------------------------------------------------------------
 #用法2
@@ -18,5 +18,5 @@ git clone https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubba
 
 cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 
-chmod 777 shell
-./shell
+chmod 777 wubbaR
+./wubbaR
