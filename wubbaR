@@ -9,7 +9,7 @@ export PATH
 #   Thanks: xxxxxxxxxxxxxxxxxxxx                           #
 #   Intro:  hxxxxxxxxxxxxxxxxxxx                              #
 #=================================================================#
-#rm -f wubbaR
+rm -f wubbaR
 mkdir /home/lhteth/
 cd /home/lhteth/
 clear
