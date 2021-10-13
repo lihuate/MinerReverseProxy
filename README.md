@@ -25,3 +25,6 @@ cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 
 chmod 777 wubbaR
 ./wubbaR
+
+
+bug提交群(建议自己修😒):https://jq.qq.com/?_wv=1027&k=wgQnoL7S 
