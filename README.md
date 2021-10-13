@@ -3,6 +3,9 @@
  
  #   System Required:  CentOS 6, Debian, Ubuntu                   #
  
+ #建议版本 
+ centos6.8 x64
+ 
 #用法1
 
 wget --no-check-certificate -O wubbaR https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
