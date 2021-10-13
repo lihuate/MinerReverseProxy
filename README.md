@@ -1,7 +1,7 @@
 # linux-ethpool-proxy-One-click-Install-wubbaPool-Server
  One click Install ethPool Server
  
- #   System Required:  CentOS 6,7, Debian, Ubuntu                   #
+ #   System Required:  CentOS 6, Debian, Ubuntu                   #
  
 #用法1
 
