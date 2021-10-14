@@ -5,7 +5,7 @@
  
  #建议版本 
  # centos6.8 x64
- 
+  ![image](https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/raw/main/masterLNOAP9B0VC)AH(B%5B4%5DK)_%7DT.png)
 # 用法1
 ssh登入vps执行:
 
