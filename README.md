@@ -4,19 +4,21 @@
  #   System Required:  CentOS 6, Debian, Ubuntu                   #
  
  #建议版本 
- centos6.8 x64
+ # centos6.8 x64
  
-#用法1
+# 用法1
+ssh登入vps执行:
 
 wget --no-check-certificate -O wubbaR https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
 
 ---------------------------------------------------------------
-#用法2
+# 用法2
 centos
-yum install git -y
+ yum install git -y
 
-ubuntu
+# ubuntu
 sudo apt install git -y
+
 -------------------------------------------------------------------
 
 git clone https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server.git
