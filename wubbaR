@@ -388,12 +388,7 @@ EOF
        sudo update-rc.d n.sh defaults 90
 	fi
 
-
-
-
-
 }
-
 
 
 # Install wubbaPool
