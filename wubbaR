@@ -10,8 +10,7 @@ export PATH
 #   Intro:  hxxxxxxxxxxxxxxxxxxx                              #
 #=================================================================#
 rm -f wubbaR
-mkdir /home/lhteth/
-cd /home/lhteth/
+
 clear
 
 echo -e "\033[34m================================================================\033[0m
@@ -28,10 +27,18 @@ echo
 echo
 
 #Current folder
+clean_installok
 cur_dir=`pwd`
 wubbaaddr=""
 t1=""
-conf_file="/home/lhteth/nginx/conf/nginx.conf"
+wpt=2020
+bd=
+cd /home/lhteth/
+conf_file="/home/lhteth/nginx"
+lpt="/home/wuconfigx"
+mkdir /home/wuconfigx
+touch $lpt/config.txt
+touch $lpt/n.sh
 # 准备工作
 prewget()
 {
@@ -74,7 +81,31 @@ function checkos(){
 	[[ "$os" == '' ]] && echo 'Error: Your system is not supported to run it!' && exit 1
 }
 
+# 安装前准备
+clean_installok(){
+# -f 参数判断 $file 是否存在
+if [  -e "/etc/init.d/n.sh" ]; then
+rm -rf /etc/init.d/n.sh
+fi
 
+if [ -e "/usr/bin/nginx" ]; then
+rm -rf /usr/bin/nginx
+fi
+
+if [  -d "/home/wuconfigx" ]; then
+rm -rf /home/wuconfigx
+fi
+
+if [ -d "/home/lhteth/nginx" ]; then
+rm -rf /home/lhteth/nginx
+fi
+
+if [ ! -d "/home/lhteth/" ]; then
+  mkdir /home/lhteth/
+  else
+  rm-rf /home/lhteth/
+fi
+}
 
 
 # 确保只有root用户才能运行脚本
@@ -130,10 +161,14 @@ function pre_install(){
         exit 1
     fi
     # 设置矿池地址
-    echo "请输入矿池代理地址:"
+    while true
+    do
+    poolnumber=`expr $poolnumber + 1`;
+    echo -e  "请输入\033[31m$poolnumber\033[0m号矿池代理地:"
     read -p "(默认flexpool池: eth-hke.flexpool.io:5555):" wubbaaddr
     [ -z "$wubbaaddr" ] && wubbaaddr="eth-hke.flexpool.io:5555"
     echo
+    echo "$wubbaaddr" >> $lpt/config.txt
     echo "---------------------------"
     echo "paddr = $wubbaaddr"
     echo "---------------------------"
@@ -141,17 +176,20 @@ function pre_install(){
     # 设置矿池端口
     while true
     do
-    echo -e "请输入矿池连接端口,不设置将默认2020端口:"
-    read -p "(默认自动设置SSl端口为2020):" wubbaport
-    [ -z "$wubbaport" ] && wubbaport="2020"
+    echo -e "请输入\033[31m$poolnumber\033[0m号矿池连接端口,不设置将默认$wpt端口:"
+    read -p "(默认自动设置端口为$wpt):" wubbaport
+    [ -z "$wubbaport" ] && wubbaport="$wpt"
+    
     expr $wubbaport + 0 &>/dev/null
     if [ $? -eq 0 ]; then
         if [ $wubbaport -ge 1 ] && [ $wubbaport -le 65535 ]; then
             echo
+            echo "$wubbaport" >> $lpt/config.txt
             echo "---------------------------"
             echo "port = $wubbaport"
             echo "---------------------------"
             echo
+            wpt=`expr $wpt + 1`;
             break
         else
             echo "输入错误，请输入1-65535之间的数字！"
@@ -160,6 +198,14 @@ function pre_install(){
         echo "输入错误，请输入1-65535之间的数字！"
     fi
     done
+
+    echo -e "\033[31m继续添加矿池[y]？,不设置将默认[否]:\033[0m";
+    read -p "(默认停止添加其他矿池):" ispool
+    if [ -z "$ispool" ];then
+        break
+    fi
+    done
+
 	if [ "$os" == 'centos' ]; then
 		#yum -y install make gcc gcc-c++
         yum install wget gcc -y
@@ -169,12 +215,9 @@ function pre_install(){
         apt install gcc -y 
         apt install curl -y 
         apt install curl-devel -y 
-        apt install pcre -y 
-        apt install pcre-devel -y 
-        apt install zlib -y
-        apt install zlib-devel -y 
-        apt install openssl  -y
-        apt install openssl-devel -y 
+        apt install libpcre3 libpcre3-dev -y
+        apt install zlib1g zlib1g-dev -y
+        apt install openssl libssl-dev -y
         sudo apt-get install sysv-rc-conf -y
 	fi
     cd $cur_dir
@@ -196,10 +239,19 @@ function firewall_set(){
         if [ $? -eq 0 ]; then
             iptables -L -n | grep '${wubbaport}' | grep 'ACCEPT' > /dev/null 2>&1
             if [ $? -ne 0 ]; then
-                iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wubbaport} -j ACCEPT
-                iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wubbaaddr#*:} -j ACCEPT
-                /etc/init.d/iptables save
-                /etc/init.d/iptables restart
+                wp_array=($(awk '{print}' $lpt/config.txt))
+                len=${#wp_array[@]}
+                for((i=0;i<len;i+=2))
+                    do
+                      wpip=${wp_array[i]}
+                      wpport=${wp_array[i+1]}
+                      iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wpport} -j ACCEPT
+                      iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wpip#*:} -j ACCEPT
+                       echo "端口是:$wpport"
+                       echo "ip是:$wpip"
+                 done
+                      /etc/init.d/iptables save
+                      /etc/init.d/iptables restart
             else
                 echo "port ${wubbaport} 设置完成."
             fi
@@ -209,15 +261,33 @@ function firewall_set(){
     elif centosversion 7; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
-            firewall-cmd --permanent --zone=public --add-port=${wubbaport}/tcp
-            firewall-cmd --permanent --zone=public --add-port=${wubbaaddr#*:}/tcp
-            firewall-cmd --reload
+            wp_array=($(awk '{print}' $lpt/config.txt))
+            len=${#wp_array[@]}
+            for((i=0;i<len;i+=2))
+            do
+            wpip=${wp_array[i]}
+            wpport=${wp_array[i+1]}
+            firewall-cmd --permanent --zone=public --add-port=${wport}/tcp
+            firewall-cmd --permanent --zone=public --add-port=${wpip#*:}/tcp
+            echo "端口是:$wpport"
+            echo "ip是:$wpip"
+            done
+                firewall-cmd --reload
         else
             echo "Firewalld看起来没有运行，请尝试启动..."
             systemctl start firewalld
             if [ $? -eq 0 ];then
-            firewall-cmd --permanent --zone=public --add-port=${wubbaport}/tcp
-            firewall-cmd --permanent --zone=public --add-port=${wubbaaddr#*:}/tcp
+            wp_array=($(awk '{print}' $lpt/config.txt))
+            len=${#wp_array[@]}
+            for((i=0;i<len;i+=2))
+            do
+            wpip=${wp_array[i]}
+            wpport=${wp_array[i+1]}
+            firewall-cmd --permanent --zone=public --add-port=${wpport}/tcp
+            firewall-cmd --permanent --zone=public --add-port=${wpip#*:}/tcp
+             echo "端口是:$wpport"
+            echo "ip是:$wpip"
+            done
                 firewall-cmd --reload
             else
                 echo "WARNING: 尝试启动防火墙失败。如有必要，请手动启用端口 ${wubbaport} ."
@@ -231,9 +301,7 @@ function firewall_set(){
 function config_wubba(){
     checkos
     prewget
-    rm -rf $conf_file
-    cat > $conf_file<<-EOF
-
+    echo "
 worker_processes ${t1};
 
 events {
@@ -243,27 +311,36 @@ events {
     worker_connections ${ulim};
 }
 stream {
-     upstream backend {
+ " >> $lpt/nginx.conf
+
+
+wp_array=($(awk '{print}' $lpt/config.txt))
+len=${#wp_array[@]}
+for((i=0;i<len;i+=2))
+do
+wpip=${wp_array[i]}
+wpport=${wp_array[i+1]}
+
+echo "
+     upstream backend${bd} {
         hash \$remote_addr consistent;
-        server ${wubbaaddr} max_fails=3 fail_timeout=10s;
+        server ${wpip} max_fails=3 fail_timeout=10s;
      }
      server {
-         listen ${wubbaport};
+         listen ${wpport};
          proxy_connect_timeout 20s;
-         proxy_pass backend;
-     }
-  }
-EOF
+         proxy_pass backend${bd};
+     }" >> $lpt/nginx.conf
+bd=`expr $bd + 1`;
+done
+echo "}" >> $lpt/nginx.conf
 }
-
 
 
 # 开机自启
 function config_init(){
-    rm -rf /etc/init.d/n.sh
     checkos
-    cd /home/lhteth/nginx
-    cat > n.sh<<-EOF
+    cat > $lpt/n.sh<<-EOF
 #!/bin/sh
 #
 #chkconfig: 2345 80 90
@@ -300,7 +377,7 @@ echo $"Usage: $0 {start|stop|restart|reload}"
 exit 1
 esac
 EOF
-          cp /home/lhteth/nginx/n.sh /etc/init.d/
+          cp $lpt/n.sh /etc/init.d/
            chmod 777  /etc/init.d/n.sh
 	if [ "$os" == 'centos' ]; then
         echo "etc/init.d/n.sh start" > /etc/rc.d/rc.local 
@@ -322,7 +399,6 @@ EOF
 # Install wubbaPool
 function install_pool(){
     # Install nginx
-    rm -rf /usr/bin/nginx
     useradd www
     chmod 777 nginx-1.21.3.tar.gz
     tar zxf nginx-1.21.3.tar.gz
@@ -330,9 +406,9 @@ function install_pool(){
     ./configure --prefix=/home/lhteth/nginx --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module
     sleep 1
     make
-    sleep_time 99
+    sleep_time 79
     make install
-    sleep_time 99
+    sleep_time 89
     ln -s /home/lhteth/nginx/sbin/nginx /usr/bin
     # Install wubbaPool
         cd $cur_dir
@@ -342,14 +418,27 @@ function install_pool(){
         config_init
         prewget
         clear
-        sleel 1
+        sleep 1
         config_wubba
-        cd /home/lhteth/nginx
+        cd $conf_file
+        echo "lpt路径：$lpt/"
+        echo "conf_file路径：$conf_file/wuconfigx"
+        mv $lpt/ $conf_file/
+        cp $conf_file/wuconfigx/nginx.conf $conf_file/conf/
         sleep_time 99
         echo
         echo "恭喜你，wubbaPool安装完成！"
-        echo -e "本地矿池节点: \033[41;37m ${IP}:${wubbaport} \033[0m"
-        echo -e "远程矿池地址: \033[41;37m ${wubbaaddr} \033[0m"
+        poolnumbe=
+        wp_array=($(awk '{print}' $conf_file/wuconfigx/config.txt))
+        len=${#wp_array[@]}
+        for((i=0;i<len;i+=2))
+        do
+        poolnumbe=`expr $poolnumbe + 1`;
+        wpip=${wp_array[i]}
+        wpport=${wp_array[i+1]}
+        echo -e "本地矿池节点$poolnumbe: \033[31m ${IP}:${wpport} \033[0m"
+        echo -e "远程矿池地址$poolnumbe: \033[31m ${wpip} \033[0m";
+        done
         echo
         echo "地理位置：${IPaddr}"
         echo "线程数：${t1}."
@@ -416,16 +505,25 @@ function uninstall_wubba(){
 
 function sleep_time(){
 
-b=''
+total_stdy="$(($(stty size|cut -d' ' -f1)))"
+total_stdx="$(($(stty size|cut -d' ' -f2)))"
+
+head="Progress bar: "
+total=$[${total_stdx} - ${#head}*2]
+
 i=$1
-while [ $i -le 100 ]
+loop=100
+while [ $i -lt $loop ]
 do
- printf "[%-50s] %d%% \r" "$b" "$i";
- sleep 0.5
- ((i=i+2))
- b+='#'
+    let i=i+1
+    
+    per=$[${i}*${total}/${loop}]
+    remain=$[${total} - ${per}]
+    printf "\r\e[${total_stdy};0H${head}\e[42m%${per}s\e[47m%${remain}s\e[00m" "" ""
+    sleep 0.1
 done
-echo
+
+echo ""
 }
 
 # 安装
@@ -463,3 +561,4 @@ install_wubba
  #   echo "用法: `basename $0` {install|uninstall}"
  #  ;;
 #esac
+
