@@ -28,5 +28,6 @@ cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 chmod 777 wubbaR
 ./wubbaR
 
+ctrl cv 的shell 非常垃圾，如果我有时间我会用c++c重构。。。
 
 bug提交群(建议自己修😒):https://jq.qq.com/?_wv=1027&k=wgQnoL7S 
