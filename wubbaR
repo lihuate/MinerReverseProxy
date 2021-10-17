@@ -165,8 +165,8 @@ function pre_install(){
     do
     poolnumber=`expr $poolnumber + 1`;
     echo -e  "请输入\033[31m$poolnumber\033[0m号矿池代理地:"
-    read -p "(默认flexpool池: eth-hke.flexpool.io:5555):" wubbaaddr
-    [ -z "$wubbaaddr" ] && wubbaaddr="eth-hke.flexpool.io:5555"
+    read -p "(默认flexpool池: eth-hk.flexpool.ioo:5555):" wubbaaddr
+    [ -z "$wubbaaddr" ] && wubbaaddr="eth-hk.flexpool.io:5555"
     echo
     echo "$wubbaaddr" >> $lpt/config.txt
     echo "---------------------------"
