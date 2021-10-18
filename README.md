@@ -3,7 +3,7 @@
  
  #   System Required:  CentOS 6, Debian, Ubuntu                   #
  
- #建议版本 
+ #支支持 centos 6.x x64 
  # centos6.8 x64
   ![image](https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/raw/main/masterLNOAP9B0VC)AH(B%5B4%5DK)_%7DT.png)
 # 用法1
