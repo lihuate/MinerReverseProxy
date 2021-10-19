@@ -831,13 +831,13 @@ case "$num" in
 	xx
 	;;
 	10)
-	Start_SSR
+	Start_wubba
 	;;
 	11)
-	Stop_SSR
+	Stop_wubba
 	;;
 	12)
-	Restart_SSR
+	Restart_wubba
 	;;
 	13)
 	View_Log
