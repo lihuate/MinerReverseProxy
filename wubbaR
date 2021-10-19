@@ -9,8 +9,8 @@ export PATH
 #   Thanks: xxxxxxxxxxxxxxxxxxxx                           #
 #   Intro:  hxxxxxxxxxxxxxxxxxxx                              #
 #=================================================================#
-rm -f wubbaR
-
+#rm -f wubbaR
+sh_ver="1.0.5"
 clear
 
 echo -e "\033[34m================================================================\033[0m
@@ -26,24 +26,15 @@ echo
 
 # 安装前准备
 clean_installok(){
-# -f 参数判断 $file 是否存在
-if [ -d "/home/lhteth/" ]; then
-  rm-rf /home/lhteth/
-  else
-  mkdir /home/lhteth/
+#如果小于65535设置ulimits：
+ulio=`ulimit -n`
+if [ $ulio -lt 65535 ]; then
+ulimit -SHn 65535
 fi
-
-if [  -d "/home/wuconfigx" ]; then
-rm -rf /home/wuconfigx
-fi
-
-if [  -e "/etc/init.d/n.sh" ]; then
-rm -rf /etc/init.d/n.sh
-fi
-
-if [ -e "/usr/bin/nginx" ]; then
-rm -rf /usr/bin/nginx
-fi
+mkdir /home/wuconfigx
+touch /home/wuconfigx/config.txt
+touch /home/wuconfigx/xn.sh
+touch /home/lhteth/nginx/conf/nginx.conf
 }
 
 #Current folder
@@ -56,9 +47,18 @@ bd=
 cd /home/lhteth/
 conf_file="/home/lhteth/nginx"
 lpt="/home/wuconfigx"
-mkdir /home/wuconfigx
-touch $lpt/config.txt
-touch $lpt/n.sh
+config_nginx_file="/home/lhteth/nginx/conf/nginx.conf"
+
+Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
+Info="${Green_font_prefix}[信息]${Font_color_suffix}"
+Error="${Red_font_prefix}[错误]${Font_color_suffix}"
+Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
+
+
+function edit_url(){
+
+lpt="/home/lhteth/nginx/wuconfigx"
+}
 # 准备工作
 prewget()
 {
@@ -101,28 +101,6 @@ function checkos(){
 	[[ "$os" == '' ]] && echo 'Error: Your system is not supported to run it!' && exit 1
 }
 
-# 安装前准备
-clean_installok(){
-# -f 参数判断 $file 是否存在
-if [ ! -d "/home/lhteth/" ]; then
-  mkdir /home/lhteth/
-  else
-  rm-rf /home/lhteth/
-fi
-
-if [  -d "/home/wuconfigx" ]; then
-rm -rf /home/wuconfigx
-fi
-
-if [  -e "/etc/init.d/n.sh" ]; then
-rm -rf /etc/init.d/n.sh
-fi
-
-if [ -e "/usr/bin/nginx" ]; then
-rm -rf /usr/bin/nginx
-fi
-}
-
 
 # 确保只有root用户才能运行脚本
 function rootness(){
@@ -130,6 +108,11 @@ function rootness(){
        echo "Error:此脚本必须以root用户身份运行!" 1>&2
        exit 1
     fi
+}
+
+#查看pid
+check_pid(){
+	PID=`ps -ef |grep -v grep | grep nginx |awk '{print $2}'`
 }
 
 # Check OS
@@ -169,6 +152,30 @@ if [ -s /etc/selinux/config ] && grep 'SELINUX=enforcing' /etc/selinux/config; t
 fi
 }
 
+#强制关闭
+function killall_nginx(){
+killall nginx
+
+}
+
+#软件环境
+function install_app(){
+	if [ "$os" == 'centos' ]; then
+		#yum -y install make gcc gcc-c++
+        yum install wget gcc -y
+        yum install  curl curl-devel zlib zlib-devel pcre pcre-devel openssl openssl-devel -y
+	else
+        apt install wget -y           
+        apt install gcc -y 
+        apt install curl -y 
+        apt install curl-devel -y 
+        apt install libpcre3 libpcre3-dev -y
+        apt install zlib1g zlib1g-dev -y
+        apt install openssl libssl-dev -y
+        sudo apt-get install sysv-rc-conf -y
+	fi
+}
+
 # Pre-installation settings
 function pre_install(){
     # Not support CentOS 5
@@ -190,7 +197,7 @@ function pre_install(){
     if [ $? -eq 0 ]; then
         if [ ${wubbaaddr#*:} -ge 1 ] && [ ${wubbaaddr#*:} -le 65535 ]; then
             echo
-            echo "$wubbaaddr" >> $lpt/config.txt
+            echo "$wubbaaddr" >> /home/wuconfigx/config.txt
             echo "---------------------------"
             echo "paddr = $wubbaaddr"
             echo "---------------------------"
@@ -206,7 +213,7 @@ function pre_install(){
     fi
 done
 
-    # 设置矿池端口
+    # 设置矿池端口  [注意]"
     while true
     do
     echo -e "请输入\033[31m$poolnumber\033[0m号矿池连接端口,不设置将默认$wpt端口:"
@@ -217,7 +224,7 @@ done
     if [ $? -eq 0 ]; then
         if [ $wubbaport -ge 1 ] && [ $wubbaport -le 65535 ]; then
             echo
-            echo "$wubbaport" >> $lpt/config.txt
+            echo "$wubbaport" >> /home/wuconfigx/config.txt
             echo "---------------------------"
             echo "port = $wubbaport"
             echo "---------------------------"
@@ -238,21 +245,6 @@ done
         break
     fi
     done
-
-	if [ "$os" == 'centos' ]; then
-		#yum -y install make gcc gcc-c++
-        yum install wget gcc -y
-        yum install  curl curl-devel zlib zlib-devel pcre pcre-devel openssl openssl-devel -y
-	else
-        apt install wget -y           
-        apt install gcc -y 
-        apt install curl -y 
-        apt install curl-devel -y 
-        apt install libpcre3 libpcre3-dev -y
-        apt install zlib1g zlib1g-dev -y
-        apt install openssl libssl-dev -y
-        sudo apt-get install sysv-rc-conf -y
-	fi
     cd $cur_dir
 }
 # 下载文件
@@ -264,22 +256,35 @@ function download_files(){
     fi
 }
 
-# 防火墙设置
+# 防火墙设置firewall_set_drop  firewall_set
 function firewall_set(){
     echo "防火墙设置启动..."
     if centosversion 6; then
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
-            iptables -L -n | grep '${wubbaport}' | grep 'ACCEPT' > /dev/null 2>&1
+            uname-a
             if [ $? -ne 0 ]; then
-                wp_array=($(awk '{print}' $lpt/config.txt))
+                wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
                 len=${#wp_array[@]}
                 for((i=0;i<len;i+=2))
                     do
                       wpip=${wp_array[i]}
-                      wpport=${wp_array[i+1]}
+                      wpport=${wp_array[i+1]}                 
+                      iptables -L -n | grep '${wpport}' | grep 'ACCEPT' > /dev/null 2>&1
+                      if [ $? -eq 0 ]; then
                       iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wpport} -j ACCEPT
+                      else
+                      echo "已经关闭或防火墙有问题"
+                      fi
+
+                      iptables -L -n | grep '${wpip#*:}' | grep 'ACCEPT' > /dev/null 2>&1
+                      if [ $? -eq 0 ]; then
                       iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wpip#*:} -j ACCEPT
+                      else
+                      echo "已经关闭或有问题"
+                      fi
+
+
                        echo "端口是:$wpport"
                        echo "ip是:$wpip"
                  done
@@ -294,7 +299,7 @@ function firewall_set(){
     elif centosversion 7; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
-            wp_array=($(awk '{print}' $lpt/config.txt))
+            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
             len=${#wp_array[@]}
             for((i=0;i<len;i+=2))
             do
@@ -310,7 +315,7 @@ function firewall_set(){
             echo "Firewalld看起来没有运行，请尝试启动..."
             systemctl start firewalld
             if [ $? -eq 0 ];then
-            wp_array=($(awk '{print}' $lpt/config.txt))
+            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
             len=${#wp_array[@]}
             for((i=0;i<len;i+=2))
             do
@@ -323,17 +328,103 @@ function firewall_set(){
             done
                 firewall-cmd --reload
             else
-                echo "WARNING: 尝试启动防火墙失败。如有必要，请手动启用端口 ${wubbaport} ."
+                echo "WARNING: 尝试启动防火墙失败。如有必要，请手动启用端口 ${wpport} ."
+                echo "WARNING: 尝试启动防火墙失败。如有必要，请手动启用端口 ${{wpip#*:} ."
             fi
         fi
     fi
     echo "防火墙设置完成..."
 }
 
+
+
+
+# 防火墙设置关闭
+function firewall_set_drop(){
+    echo "防火墙设置启动..."
+    if centosversion 6; then
+        /etc/init.d/iptables status > /dev/null 2>&1
+        if [ $? -eq 0 ]; then
+            uname-a
+            if [ $? -ne 0 ]; then
+                wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+                len=${#wp_array[@]}
+                for((i=0;i<len;i+=2))
+                    do
+                      wpip=${wp_array[i]}
+                      wpport=${wp_array[i+1]}
+                      iptables -L -n | grep '${wpport}' | grep 'DROP' > /dev/null 2>&1
+                      if [ $? -eq 0 ]; then
+                      iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wpport} -j DROP
+                      else
+                      echo "已经关闭或防火墙有问题"
+                      fi
+
+                      iptables -L -n | grep '${wpip#*:}' | grep 'DROP' > /dev/null 2>&1
+                      if [ $? -eq 0 ]; then
+                      iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport ${wpip#*:} -j DROP
+                      else
+                      echo "已经关闭或有问题"
+                      fi
+                       echo "端口是:$wpport"
+                       echo "ip是:$wpip"
+                 done
+                      /etc/init.d/iptables save
+                      /etc/init.d/iptables restart
+            else
+                echo "port ${wubbaport} 设置完成."
+            fi
+        else
+            echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
+        fi
+    elif centosversion 7; then
+        systemctl status firewalld > /dev/null 2>&1
+        if [ $? -eq 0 ];then
+            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+            len=${#wp_array[@]}
+            for((i=0;i<len;i+=2))
+            do
+            wpip=${wp_array[i]}
+            wpport=${wp_array[i+1]}
+            firewall-cmd --permanent --zone=public --remove-port=${wport}/tcp
+            firewall-cmd --permanent --zone=public --remove-port=${wpip#*:}/tcp
+            echo "端口是:$wpport"
+            echo "ip是:$wpip"
+            done
+                firewall-cmd --reload
+        else
+            echo "Firewalld看起来没有运行，请尝试启动..."
+            systemctl start firewalld
+            if [ $? -eq 0 ];then
+            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+            len=${#wp_array[@]}
+            for((i=0;i<len;i+=2))
+            do
+            wpip=${wp_array[i]}
+            wpport=${wp_array[i+1]}
+            firewall-cmd --permanent --zone=public --remove-port=${wpport}/tcp
+            firewall-cmd --permanent --zone=public --remove-port=${wpip#*:}/tcp
+             echo "端口是:$wpport"
+            echo "ip是:$wpip"
+            done
+                firewall-cmd --reload
+            else
+                echo "WARNING: 尝试启动防火墙失败。如有必要，请手动启用端口 ${wpport} ."
+                echo "WARNING: 尝试启动防火墙失败。如有必要，请手动启用端口 ${{wpip#*:} ."
+            fi
+        fi
+    fi
+    echo "防火墙设置完成..."
+}
+
+
+
 # Config wubbaPool
 function config_wubba(){
     checkos
     prewget
+    rm -rf  /home/lhteth/nginx/conf/nginx.conf
+    touch /home/lhteth/nginx/conf/nginx.conf
     echo "
 worker_processes ${t1};
 events {
@@ -343,10 +434,10 @@ events {
     worker_connections ${ulim};
 }
 stream {
- " >> $lpt/nginx.conf
+ " >> /home/lhteth/nginx/conf/nginx.conf
 
 
-wp_array=($(awk '{print}' $lpt/config.txt))
+wp_array=($(awk '{print}' /home/lhteth/nginx/wuconfigx/config.txt))
 len=${#wp_array[@]}
 for((i=0;i<len;i+=2))
 do
@@ -362,17 +453,105 @@ echo "
          listen ${wpport};
          proxy_connect_timeout 20s;
          proxy_pass backend${bd};
-     }" >> $lpt/nginx.conf
+     }" >> /home/lhteth/nginx/conf/nginx.conf
 bd=`expr $bd + 1`;
 done
-echo "}" >> $lpt/nginx.conf
+echo "}" >> /home/lhteth/nginx/conf/nginx.conf
+}
+
+
+# 查看
+function view_pool_config(){
+    clear
+    prewget
+	if [[ -e ${config_nginx_file} ]]; then
+        poolnumbe=
+        wp_array=($(awk '{print}' /home/lhteth/nginx/wuconfigx/config.txt))
+        len=${#wp_array[@]}
+        for((i=0;i<len;i+=2))
+        do
+        poolnumbe=`expr $poolnumbe + 1`;
+        wpip=${wp_array[i]}
+        wpport=${wp_array[i+1]}
+        echo -e "本地矿池节点$poolnumbe: \033[31m ${IP}:${wpport} \033[0m"
+        echo -e "远程矿池地址$poolnumbe: \033[31m ${wpip} \033[0m";
+        done
+        echo
+        echo -e "地理位置：${IPaddr}"
+        echo -e "线程数：${t1}."
+        echo -e "进程最大可打开文件数：${ulim}."
+        echo ""
+        else
+        echo
+        echo  -e "请先安装！ $Tip "
+        echo
+        fi
+}
+
+
+#重置配置
+function config_inithok(){
+    addr_true=$conf_file/wuconfigx/ture
+    if [[ -e ${addr_true} ]]; then
+    cp /home/lhteth/nginx/wuconfigx/config.txt.bak /home/lhteth/nginx/wuconfigx/config.txt
+    nginx -t
+        if [ $? -eq 0 ]; then
+          echo -e " 当前状态: ${Green_font_prefix}成功${Font_color_suffix} "
+          fi
+    fi
+     echo -e " 当前状态:  ${Red_font_prefix}失败${Font_color_suffix} "
+}
+
+
+
+# 修改
+function config_edit(){
+    checkos
+    edit_url
+	if [[ -e ${config_nginx_file} ]]; then
+    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak
+    prewget
+    killall_nginx
+            if [ $? -eq 0 ]; then
+          echo -e " 当前状态: ${Green_font_prefix}关闭成功${Font_color_suffix} "
+          else
+          echo -e " 当前状态: ${Red_font_prefix}已关闭${Font_color_suffix}  "
+          fi
+    firewall_set_drop
+    rm -rf /home/lhteth/nginx/wuconfigx/config.txt
+    pre_install
+    rm -rf /home/lhteth/nginx/conf/nginx.conf
+    config_wubba
+    nginx -t
+    if [ $? -eq 0 ]; then
+    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak
+    touch /home/lhteth/nginx/wuconfigx/ture
+    cd /home/lhteth/nginx/sbin/
+     ./nginx "$args" 
+          if [ $? -eq 0 ]; then
+          echo -e " 当前状态: ${Green_font_prefix}nginx成功${Font_color_suffix} "
+          else
+          echo -e " 当前状态: ${Red_font_prefix}nginx失败${Font_color_suffix}  "
+          fi
+    echo "succeed"
+else
+    mv /home/lhteth/nginx/wuconfigx/config.txt.bak /home/lhteth/nginx/wuconfigx/config.txt
+    config_wubba
+    echo "failed配置已恢复"
+fi
+        firewall_set
+        else
+        echo
+        echo  -e "请先安装！ $Tip "
+        echo
+        fi
 }
 
 
 # 开机自启
 function config_init(){
     checkos
-    cat > $lpt/n.sh<<-EOF
+    cat > /home/lhteth/nginx/wuconfigx/xn.sh<<-EOF
 #!/bin/sh
 #
 #chkconfig: 2345 80 90
@@ -405,19 +584,28 @@ echo $"Usage: $0 {start|stop|restart|reload}"
 exit 1
 esac
 EOF
-          cp $lpt/n.sh /etc/init.d/
-           chmod 777  /etc/init.d/n.sh
+          cp /home/lhteth/nginx/wuconfigx/xn.sh /etc/init.d/xn.sh
+           chmod 777  /etc/init.d/xn.sh
 	if [ "$os" == 'centos' ]; then
-        echo "etc/init.d/n.sh start" > /etc/rc.d/rc.local 
+        echo "etc/init.d/xn.sh start" > /etc/rc.d/rc.local 
         chmod +x /etc/rc.d/rc.local 
 	else
 
     
-       sudo update-rc.d n.sh defaults 90
+       sudo update-rc.d etc/init.d/xn.sh defaults 90
 	fi
 
 }
 
+
+
+
+#关闭防火墙特定端口
+function iptfw_drop(){
+ iptfw=$1
+  iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport  -j ${iptfw}
+  iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport  -j ${iptfw}
+}
 
 # Install wubbaPool
 function install_pool(){
@@ -433,51 +621,33 @@ function install_pool(){
     make install
     sleep_time 89
     ln -s /home/lhteth/nginx/sbin/nginx /usr/bin
+    ln -s /root/wubbaR /usr/bin
     # Install wubbaPool
         cd $cur_dir
         nginx -v
         # Run wubbaPool in the background
         if [ $? -eq 0 ]; then
-        config_init
         prewget
         clear
         sleep 1
-        config_wubba
-        cd $conf_file
-        echo "lpt路径：$lpt/"
+        echo "lpt路径：/home/wuconfigx/"
         echo "conf_file路径：$conf_file/wuconfigx"
-        mv $lpt/ $conf_file/
-        cp $conf_file/wuconfigx/nginx.conf $conf_file/conf/
+        mv /home/wuconfigx/ $conf_file/
+        lpt="/home/lhteth/nginx/wuconfigx"
+        echo "/home/lhteth/nginx/wuconfigx" >> /home/lhteth/nginx/wuconfigx/edit_true
+        config_wubba
+        config_init
+        cd $conf_file
         sleep_time 99
         echo
         echo "恭喜你，wubbaPool安装完成！"
-        poolnumbe=
-        wp_array=($(awk '{print}' $conf_file/wuconfigx/config.txt))
-        len=${#wp_array[@]}
-        for((i=0;i<len;i+=2))
-        do
-        poolnumbe=`expr $poolnumbe + 1`;
-        wpip=${wp_array[i]}
-        wpport=${wp_array[i+1]}
-        echo -e "本地矿池节点$poolnumbe: \033[31m ${IP}:${wpport} \033[0m"
-        echo -e "远程矿池地址$poolnumbe: \033[31m ${wpip} \033[0m";
-        done
-        echo
-        echo "地理位置：${IPaddr}"
-        echo "线程数：${t1}."
-        echo "进程最大可打开文件数：${ulim}."
-        echo "bug提交群:https://jq.qq.com/?_wv=1027&k=wgQnoL7S "
-        echo "启动命令 :nginx -s start, ，重启命令："
-        echo "停止命令 ：nginx -s stop"
-        echo "重启命令： nginx -s restart"
-        echo "配置重载： nginx -s reload"
-        echo "另外：一键/修改/更新/web控制台等，有时间放进来"
-        echo ""
+        view_pool_config
         echo "=================稍等片刻！================"
         echo ""
-        echo "安装完毕!"
+        echo -e "${Green_font_prefix}安装完毕！${Font_color_suffix}"
         echo
         echo ""
+        menu_status
     else
         echo "wubbaPool安装失败!"
         install_cleanup
@@ -510,17 +680,18 @@ function uninstall_wubba(){
         ps -ef |grep nginx 
             echo"停止成功"
         fi
+        killall nginx
         checkos
 	if [ "$os" == 'centos' ]; then
-            chkconfig --del wubba
+            chkconfig --del xn.sh
         else
-            update-rc.d -f wubba remove
+            update-rc.d -f xn.sh remove
         fi
 
         rm -rf /home/lhteth/
-        rm -f /etc/init.d/wubba
+        rm -f /etc/init.d/xn.sh
         rm -rf /usr/bin/nginx
-        echo "wubbaPool 卸载成功!"
+        echo -e "wubbaPool  ${Green_font_prefix}卸载成功!${Font_color_suffix}"
     else
         echo "卸载已取消，无需执行任何操作"
     fi
@@ -554,7 +725,13 @@ function install_wubba(){
     checkos
     rootness
     disable_selinux
+    if [[ -e ${config_nginx_file} ]]; then
+    #安装前卸载
+    uninstall_wubba
+    exit 0
+    fi
     pre_install
+    install_app
     download_files
     install_pool
     echo "正在清理 。"
@@ -563,24 +740,115 @@ function install_wubba(){
     fi
 
     install_cleanup	 
-    echo "请输入   nginx   开启服务器  如果有问题 请关闭再次开启 。"
+    echo -e  "请输入  ${Green_font_prefix}nginx${Font_color_suffix}    开启服务器  如果有问题 请关闭再次开启     "
     exit
 }
 
 
-install_wubba
-# Initialization step 初始化
-#action=$1
-#[ -z $1 ] && action=install
-#case "$action" in
-#install)
- #   install_wubba
- #   ;;
-#uninstall)
-#    uninstall_wubba
-#    ;;
-#*)
- #   echo "参数错误! [${action} ]"
- #   echo "用法: `basename $0` {install|uninstall}"
- #  ;;
-#esac
+
+# 显示 菜单状态
+menu_status(){
+	if [[ -e ${config_nginx_file} ]]; then
+		check_pid
+		if [[ ! -z "${PID}" ]]; then
+			echo -e " 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 并 ${Green_font_prefix}已启动${Font_color_suffix}"
+		else
+			echo -e " 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 但 ${Red_font_prefix}未启动${Font_color_suffix}"
+		fi
+	else
+		echo -e " 当前状态: ${Red_font_prefix}未安装${Font_color_suffix}"
+	fi
+}
+
+check_sys(){
+	if [[ -f /etc/redhat-release ]]; then
+		release="centos"
+	elif cat /etc/issue | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+	elif cat /proc/version | grep -q -E -i "debian"; then
+		release="debian"
+	elif cat /proc/version | grep -q -E -i "ubuntu"; then
+		release="ubuntu"
+	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
+		release="centos"
+    fi
+	bit=`uname -m`
+}
+check_sys
+[[ ${release} != "debian" ]] && [[ ${release} != "ubuntu" ]] && [[ ${release} != "centos" ]] && echo -e "${Error} 本脚本不支持当前系统 ${release} !" && exit 1
+echo -e "  wubbrR 一键管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
+    ---- wubbaR | 矿池代理 ----
+
+  ${Green_font_prefix}1.${Font_color_suffix} 安装 代理矿池
+  ${Green_font_prefix}2.${Font_color_suffix} 更新 代理矿池（未实现）
+  ${Green_font_prefix}3.${Font_color_suffix} 卸载 代理矿池
+————————————
+  ${Green_font_prefix}4.${Font_color_suffix} 查看 代理矿池信息
+  ${Green_font_prefix}5.${Font_color_suffix} 修改 初始化配置文件
+————————————
+ ${Green_font_prefix}8.${Font_color_suffix}  启动 pool
+ ${Green_font_prefix}9.${Font_color_suffix}  停止 pool
+ ${Green_font_prefix}10.${Font_color_suffix} 重启 pool
+ ${Green_font_prefix}11.${Font_color_suffix} 查看 矿池日志（未实现）
+————————————
+ ${Green_font_prefix}12.${Font_color_suffix} 其他功能
+ ${Green_font_prefix}13.${Font_color_suffix} web控制台（未实现）
+ ${Green_font_prefix}13.${Font_color_suffix} 升级脚本（未实现）
+ "
+menu_status
+ln -s /home/lhteth/nginx/sbin/nginx /usr/bin &>/dev/null
+echo && read -e -p "请输入数字 [1-15]：" num
+case "$num" in
+	1)
+	install_wubba
+	;;
+	2)
+	xxxxxx
+	;;
+	3)
+	uninstall_wubba
+	;;
+	4)
+	view_pool_config
+	;;
+    5)
+	config_edit
+	;;
+	6)
+	xxx
+	;;
+	7)
+	xxx
+	;;
+	8)
+	xxx
+	;;
+	9)
+	xx
+	;;
+	10)
+	Start_SSR
+	;;
+	11)
+	Stop_SSR
+	;;
+	12)
+	Restart_SSR
+	;;
+	13)
+	View_Log
+	;;
+	14)
+	Other_functions
+	;;
+	15)
+	Update_Shell
+	;;
+	*)
+	echo -e "${Error} 请输入正确的数字 [1-13]"
+	;;
+esac
