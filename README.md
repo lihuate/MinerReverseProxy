@@ -79,6 +79,14 @@ PhoenixMiner.exe -pool ssl://e43.132.2xx.2xx:2020 -pool2 ssl://201.132.2xx.2xx:2
 t-rex.exe -a ethash -o stratum+ssl://e43.132.2xx.2xx:2020 -o stratum+ssl://201.132.2xx.2xx:2023 -u WALLET_ADDRESS -p x -w WORKER_NAME
 ```
 
-ctrl cv 的shell 非常垃圾，如果我有时间我会用c++重构。。。
+# Donations
+Donations are always welcome:
+```
+ETH: 0x4296116d44a4a7259B52B1A756e19083e675062A
+```
+CTRL C + V code is very garbage
+It may be refactored in C + +
+
+复制粘贴拼凑的shell 非常垃圾，如果有时间我会用c++重构...
 
 bug提交群(建议自己修😒):https://jq.qq.com/?_wv=1027&k=wgQnoL7S 
