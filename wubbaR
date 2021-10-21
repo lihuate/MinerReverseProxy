@@ -31,11 +31,11 @@ ulio=`ulimit -n`
 if [ $ulio -lt 65535 ]; then
 ulimit -SHn 65535
 fi
-mkdir /home/wuconfigx >& /dev/null
 touch /home/wuconfigx/config.txt >& /dev/null
 touch /home/wuconfigx/xn.sh >& /dev/null
 touch /home/lhteth/nginx/conf/nginx.conf >& /dev/null
 rm -rf /home/wuconfigx >& /dev/null
+mkdir /home/wuconfigx >& /dev/null
 
 #Current folder
 clean_installok
