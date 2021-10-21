@@ -87,13 +87,12 @@ kill -USR2 PID / kill -USR2 `cat /home/lhteth/nginx/logs/nginx.pid`
 
 ```
 
-
 # After installation
 
 ## Nbmner
 
 ```
-nbminer -a ethash -o stratum+ssl://43.132.2xx.2xx:2020  -o stratum+ssl://101.132.2xx.2xx:2023 -u WALLET_ADDRESS.WORKER_NAME -log
+nbminer -a ethash -o stratum+ssl://43.132.2xx.2xx:2020  -o1 stratum+ssl://101.132.2xx.2xx:2023 -u WALLET_ADDRESS.WORKER_NAME -log
 ```
 
 
