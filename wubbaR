@@ -11,7 +11,6 @@ export PATH
 #=================================================================#
 #rm -f wubbaR
 sh_ver="1.0.5"
-LANG="zh_CN.UTF-8"
 clear
 
 echo -e "\033[34m================================================================\033[0m
@@ -22,7 +21,9 @@ echo -e "\033[34m===============================================================
 \033[31m           即将开始搭建... 建议centos6.8 x64                      \033[0m
 \033[34m================================================================\033[0m";
 echo
+
 echo
+
 # 安装前准备
 clean_installok(){
 #如果小于65535设置ulimits：
@@ -30,10 +31,10 @@ ulio=`ulimit -n`
 if [ $ulio -lt 65535 ]; then
 ulimit -SHn 65535
 fi
-mkdir /home/wuconfigx
-touch /home/wuconfigx/config.txt
-touch /home/wuconfigx/xn.sh
-touch /home/lhteth/nginx/conf/nginx.conf
+mkdir /home/wuconfigx >& /dev/null
+touch /home/wuconfigx/config.txt >& /dev/null
+touch /home/wuconfigx/xn.sh >& /dev/null
+touch /home/lhteth/nginx/conf/nginx.conf >& /dev/null
 }
 
 #Current folder
@@ -43,7 +44,7 @@ wubbaaddr=""
 t1=""
 wpt=2020
 bd=
-cd /home/lhteth/
+cd /home/lhteth/ >& /dev/null
 conf_file="/home/lhteth/nginx"
 lpt="/home/wuconfigx"
 config_nginx_file="/home/lhteth/nginx/conf/nginx.conf"
@@ -830,13 +831,13 @@ case "$num" in
 	xx
 	;;
 	10)
-	Start_wubba
+	Start_SSR
 	;;
 	11)
-	Stop_wubba
+	Stop_SSR
 	;;
 	12)
-	Restart_wubba
+	Restart_SSR
 	;;
 	13)
 	View_Log
