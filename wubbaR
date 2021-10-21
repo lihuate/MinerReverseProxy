@@ -24,12 +24,12 @@ echo
 
 echo
 
+
 # 清理安装文件
 function install_cleanup(){
     rm -f nginx-1.21.3.tar.gz >& /dev/null
     rm -rf nginx-1.21.3 >& /dev/null
     rm -rf /home/wuconfigx >& /dev/null
-    clear
 }
 
 # 安装前准备
@@ -44,6 +44,7 @@ clean_installok(){
     touch /home/wuconfigx/config.txt >& /dev/null
     touch /home/wuconfigx/xn.sh >& /dev/null
     touch /home/lhteth/nginx/conf/nginx.conf >& /dev/null
+    clear
 }
 
 #Current folder
