@@ -185,6 +185,7 @@ function install_app(){
         yum clean all
         yum makecache
         exit 1
+        fi
     fi
 
 	else
