@@ -24,6 +24,37 @@ echo
 
 echo
 
+#控制
+start() {
+    /etc/init.d/xn.sh start
+    if [ $? -eq 0 ]; then
+    menu_status
+    else
+    killall nginx
+    /etc/init.d/xn.sh start
+    menu_status
+    fi
+}
+stop() {
+        /etc/init.d/xn.sh stop
+        if [ $? -eq 0 ]; then
+        menu_status
+        else
+        killall nginx
+        /etc/init.d/xn.sh stop
+        menu_status
+    fi
+}
+restart() {
+        /etc/init.d/xn.sha restart
+        if [ $? -eq 0 ]; then
+        menu_status
+        else
+        killall nginx
+        /etc/init.d/xn.sha restart
+        menu_status
+    fi
+}
 
 
 aadminaddr=`pwd`
@@ -852,19 +883,19 @@ case "$num" in
 	xxx
 	;;
 	8)
-	xxx
+    start
 	;;
 	9)
-	xx
+    stop
 	;;
 	10)
-	Start_wubba
+	restart
 	;;
 	11)
-	Stop_wubba
+	xxx
 	;;
 	12)
-	Restart_wubba
+	xxx
 	;;
 	13)
 	View_Log
