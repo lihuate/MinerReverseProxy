@@ -51,7 +51,7 @@ restart() {
         menu_status
         else
         killall nginx
-        /etc/init.d/xn.sha restart
+        /etc/init.d/xn.sh restart
         menu_status
     fi
 }
@@ -655,7 +655,7 @@ EOF
 	else
 
     
-       sudo update-rc.d etc/init.d/xn.sh defaults 90
+       sudo update-rc.d etc/init.d/xn.sh defaults 90 
 	fi
 
 }
@@ -683,8 +683,8 @@ function install_pool(){
     sleep_time 79
     make install
     sleep_time 89
-    ln -s /home/lhteth/nginx/sbin/nginx /usr/bin
-    ln -s /root/wubbaR /usr/bin
+    ln -s /home/lhteth/nginx/sbin/nginx /usr/bin >& /dev/null
+    ln -s /root/wubbaR /usr/bin >& /dev/null
     # Install wubbaPool
         cd $cur_dir
         nginx -v
@@ -745,10 +745,12 @@ function uninstall_wubba(){
         fi
 
         find / -name nginx* -exec rm -rf {} \;
-        rm -rf /home/lhteth/
-        rm -f /etc/init.d/xn.sh
-        rm -rf /usr/bin/nginx
-        rm -rf /home/wuconfigx
+        rm -rf /home/lhteth/ >& /dev/null
+        rm -f /etc/init.d/xn.sh >& /dev/null
+        rm -rf /usr/bin/nginx >& /dev/null
+        rm -rf /home/wuconfigx >& /dev/null
+        rm -rf /usr/bin/nginx >& /dev/null
+        rm -rf /usr/bin/wubbaR >& /dev/null
         echo -e "wubbaPool  ${Green_font_prefix}卸载成功!${Font_color_suffix}"
     else
         echo "卸载已取消，无需执行任何操作"
