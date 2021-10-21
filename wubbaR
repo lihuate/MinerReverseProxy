@@ -252,6 +252,11 @@ function download_files(){
     # 下载nginx文件
     if ! wget --no-check-certificate -O nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
         echo "下载nginx文件失败！"
+
+            if ! wget --no-check-certificate -O nginx-1.21.3.tar.gz http://nginx.org/download/nginx-1.21.3.tar.gz; then
+        echo "下载nginx文件失败！"
+        exit 1
+    fi
         exit 1
     fi
 }
