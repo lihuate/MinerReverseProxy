@@ -30,7 +30,7 @@ function install_cleanup(){
     rm -f nginx-1.21.3.tar.gz >& /dev/null
     rm -rf nginx-1.21.3 >& /dev/null
     rm -rf /home/wuconfigx >& /dev/null
-    rm -rf /home/wuconfigx >& /dev/null
+    clear
 }
 
 # 安装前准备
@@ -710,6 +710,7 @@ function uninstall_wubba(){
             update-rc.d -f xn.sh remove
         fi
 
+        find / -name nginx* -exec rm -rf {} \;
         rm -rf /home/lhteth/
         rm -f /etc/init.d/xn.sh
         rm -rf /usr/bin/nginx
