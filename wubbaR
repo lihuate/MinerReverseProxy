@@ -21,6 +21,7 @@ echo -e "\033[34m===============================================================
 \033[31m           即将开始搭建... 建议centos6.8 x64                      \033[0m
 \033[34m================================================================\033[0m";
 echo
+
 echo
 
 # 安装前准备
@@ -695,6 +696,7 @@ function uninstall_wubba(){
         rm -rf /home/lhteth/
         rm -f /etc/init.d/xn.sh
         rm -rf /usr/bin/nginx
+        rm -rf /home/wuconfigx
         echo -e "wubbaPool  ${Green_font_prefix}卸载成功!${Font_color_suffix}"
     else
         echo "卸载已取消，无需执行任何操作"
