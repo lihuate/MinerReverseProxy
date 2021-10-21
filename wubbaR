@@ -668,6 +668,7 @@ function install_cleanup(){
     cd $cur_dir
     rm -f nginx-1.21.3.tar.gz
     rm -rf nginx-1.21.3
+    rm -rf /home/wuconfigx
 }
 
 
