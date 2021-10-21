@@ -24,21 +24,29 @@ echo
 
 echo
 
+
+# 清理安装文件
+function install_cleanup(){
+    rm -f nginx-1.21.3.tar.gz >& /dev/null
+    rm -rf nginx-1.21.3 >& /dev/null
+    rm -rf /home/wuconfigx >& /dev/null
+    rm -rf /home/wuconfigx >& /dev/null
+}
+
 # 安装前准备
 clean_installok(){
+    install_cleanup
 #如果小于65535设置ulimits：
-ulio=`ulimit -n`
-if [ $ulio -lt 65535 ]; then
-ulimit -SHn 65535
-fi
-
-rm -rf /home/wuconfigx >& /dev/null
-mkdir /home/wuconfigx >& /dev/null
-
-touch /home/wuconfigx/config.txt >& /dev/null
-touch /home/wuconfigx/xn.sh >& /dev/null
-touch /home/lhteth/nginx/conf/nginx.conf >& /dev/null
+    ulio=`ulimit -n`
+    if [ $ulio -lt 65535 ]; then
+    ulimit -SHn 65535
+    fi
+    mkdir /home/wuconfigx >& /dev/null
+    touch /home/wuconfigx/config.txt >& /dev/null
+    touch /home/wuconfigx/xn.sh >& /dev/null
+    touch /home/lhteth/nginx/conf/nginx.conf >& /dev/null
 }
+
 #Current folder
 clean_installok
 cur_dir=`pwd`
@@ -166,6 +174,19 @@ function install_app(){
 		#yum -y install make gcc gcc-c++
         yum install wget gcc -y
         yum install  curl curl-devel zlib zlib-devel pcre pcre-devel openssl openssl-devel -y
+
+        if [ $? -ne 0 ]; then
+         # Notyumreper CentOS 5
+    if centosversion 6; then
+        echo "换腾讯源."
+        mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+        wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.cloud.tencent.com/repo/centos6_base.repo    
+        sed -i 's#http#https#g' /etc/yum.repos.d/CentOS-Base.repo
+        yum clean all
+        yum makecache
+        exit 1
+    fi
+
 	else
         apt install wget -y           
         apt install gcc -y 
@@ -174,7 +195,7 @@ function install_app(){
         apt install libpcre3 libpcre3-dev -y
         apt install zlib1g zlib1g-dev -y
         apt install openssl libssl-dev -y
-        sudo apt-get install sysv-rc-conf -y
+        apt install sysv-rc-conf -y
 	fi
 }
 
@@ -665,14 +686,6 @@ function install_pool(){
 }
 
 
-# 清理安装文件
-function install_cleanup(){
-    cd $cur_dir
-    rm -f nginx-1.21.3.tar.gz
-    rm -rf nginx-1.21.3
-    rm -rf /home/wuconfigx
-}
-
 
 # 卸载
 function uninstall_wubba(){
@@ -840,13 +853,13 @@ case "$num" in
 	xx
 	;;
 	10)
-	Start_SSR
+	Start_wubba
 	;;
 	11)
-	Stop_SSR
+	Stop_wubba
 	;;
 	12)
-	Restart_SSR
+	Restart_wubba
 	;;
 	13)
 	View_Log
