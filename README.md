@@ -15,19 +15,20 @@ If you find any issues with the pool software please feel free to issue a pull r
 
 System Required:  centos 6.x x64    /   Ubuntu
 
- 用法1
- 
+ ## 用法1
+ssh login:
+
 ssh登入vps执行:
 ```
 wget --no-check-certificate -O wubbaR https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
 ```
 ---------------------------------------------------------------
-# 用法2 
+## 用法2 
 centos
 ```
  yum install git -y
 ```
-# ubuntu
+ubuntu
 ```
 sudo apt install git -y
 ```
@@ -38,6 +39,55 @@ cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 chmod 777 wubbaR
 ./wubbaR
 ```
+
+# Check it
+
+### configuration 
+```
+nginx -t
+```
+### configuration file
+```
+vim /home/lhteth/nginx/conf/nginx.conf
+```
+
+
+### init
+
+
+## Performance (stock settings)
+
+| 信号        |  作用                      |
+| :----------| :------------------------: | 
+| TERM/INT   | 立即关闭整个服务            | 
+| QUIT       | "优雅"地关闭整个服务        | 
+| HUP        | 重读配置对新配置项生效       |  
+| USR1       | 重新打开日志文件，日志切割   |
+| USR2       | 平滑升级到最新版的nginx     |
+| WINCH      | 所有子进程不在接收处理新连接 |
+
+
+
+
+```
+Force close： killall nginx
+start:        nginx
+stop:         nginx -s stop
+restart:      nginx -s restart
+reload:       nginx -s reload
+kill -TERM PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
+kill -INT PID / kill -INT `cat /home/lhteth/nginx/logs/nginx.pid`
+kill -QUIT PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
+
+kill -HUP PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
+ 
+kill -USR1 PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
+
+kill -USR2 PID / kill -USR2 `cat /home/lhteth/nginx/logs/nginx.pid`
+
+```
+
+
 # After installation
 
 ## Nbmner
