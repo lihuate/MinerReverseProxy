@@ -572,29 +572,33 @@ function config_edit(){
     checkos
     edit_url
 	if [[ -e ${config_nginx_file} ]]; then
-    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak
+    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak &>/dev/null
     prewget
-    killall_nginx
+    firewall_set_drop
+    rm -rf /home/lhteth/nginx/wuconfigx/config.txt &>/dev/null
+    rm -rf /home/lhteth/nginx/conf/nginx.conf &>/dev/null
+    rm -rf /home/wuconfigx/config.txt &>/dev/null
+    pre_install
+    cp /home/wuconfigx/config.txt  /home/lhteth/nginx/wuconfigx/config.txt &>/dev/null
+    config_wubba
+    rm -rf /home/wuconfigx/
+    nginx -t
+    if [ $? -eq 0 ]; then
+    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak &>/dev/null
+    touch /home/lhteth/nginx/wuconfigx/ture &>/dev/null
+    cd /home/lhteth/nginx/sbin/
+        killall_nginx
             if [ $? -eq 0 ]; then
           echo -e " 当前状态: ${Green_font_prefix}关闭成功${Font_color_suffix} "
           else
           echo -e " 当前状态: ${Red_font_prefix}已关闭${Font_color_suffix}  "
           fi
-    firewall_set_drop
-    rm -rf /home/lhteth/nginx/wuconfigx/config.txt
-    pre_install
-    rm -rf /home/lhteth/nginx/conf/nginx.conf
-    config_wubba
-    nginx -t
-    if [ $? -eq 0 ]; then
-    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak
-    touch /home/lhteth/nginx/wuconfigx/ture
-    cd /home/lhteth/nginx/sbin/
-     ./nginx "$args" 
+    start
           if [ $? -eq 0 ]; then
           echo -e " 当前状态: ${Green_font_prefix}nginx成功${Font_color_suffix} "
+          view_pool_config
           else
-          echo -e " 当前状态: ${Red_font_prefix}nginx失败${Font_color_suffix}  "
+          echo -e " 当前状态: ${Red_font_prefix}nginx失败，请手动开启${Font_color_suffix}  "
           fi
     echo "succeed"
 else
