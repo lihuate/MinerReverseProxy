@@ -138,4 +138,7 @@ It may be refactored in C + +
 
 复制粘贴拼凑的shell 非常垃圾，如果有时间我会用c++重构...
 
+本开源库说明：
+仅出于个人交流学习，不保留任何权益，请误用于违法犯忌，由您自行承担。
+
 bug提交群(建议自己修😒):https://jq.qq.com/?_wv=1027&k=wgQnoL7S 
