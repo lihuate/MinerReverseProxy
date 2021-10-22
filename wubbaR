@@ -697,8 +697,6 @@ function install_pool(){
         prewget
         clear
         sleep 1
-        echo "lpt路径：/home/wuconfigx/"
-        echo "conf_file路径：$conf_file/wuconfigx"
         mv /home/wuconfigx/ $conf_file/
         lpt="/home/lhteth/nginx/wuconfigx"
         echo "/home/lhteth/nginx/wuconfigx" >> /home/lhteth/nginx/wuconfigx/edit_true
@@ -721,7 +719,7 @@ function install_pool(){
         exit 1
     fi
 
-    echo "请稍后手动开启nginx（start nginx）"
+    echo "正在自动调用开启命令。。。。。。"
 }
 
 
@@ -803,8 +801,9 @@ function install_wubba(){
         firewall_set > /dev/null 2>&1
     fi
 
-    install_cleanup	 
-    echo -e  "请输入  ${Green_font_prefix}nginx${Font_color_suffix}    开启服务器  如果有问题 请关闭再次开启     "
+    install_cleanup
+    start	 
+    echo -e  " 如果开启失败请手动输入  ${Green_font_prefix}nginx${Font_color_suffix}    开启服务器  如果有问题 请关闭再次开启     "
     exit
 }
 
