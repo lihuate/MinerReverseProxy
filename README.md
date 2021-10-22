@@ -3,7 +3,7 @@ A mine pool network agent script, based on Linux，nginx，shell.
 
 Support multi pool address, SSL, TLS, multi port, etc.
 
-Support ETH, RVN, GRIN, BEAM, CFX, ZIL, ERGO, AE, SERO.................
+Support ETH, BTC, RVN, GRIN, BEAM, CFX, ZIL, ERGO, AE, SERO.................
 
 # Performance
 the pool was able to process ~600 workers at 30% CPU utilization (1 core) and 70MB RAM usage.
