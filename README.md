@@ -129,10 +129,6 @@ t-rex.exe -a ethash -o stratum+ssl://e43.132.2xx.2xx:2020 -o stratum+ssl://201.1
 ```
 
 # Donations
-Donations are always welcome:
-```
-ETH: 0x4296116d44a4a7259B52B1A756e19083e675062A
-```
 CTRL C + V code is very garbage
 It may be refactored in C + +
 
