@@ -24,6 +24,27 @@ echo -e "\033[34m===============================================================
 echo
 echo
 
+
+
+
+#Current folder
+clean_installok
+cur_dir=`pwd`
+wubbaaddr=""
+t1=""
+wpt=2020
+bd=
+cd /home/lhteth/ >& /dev/null
+conf_file="/home/lhteth/nginx"
+lpt="/home/wuconfigx"
+config_nginx_file="/home/lhteth/nginx/conf/nginx.conf"
+
+Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
+Info="${Green_font_prefix}[信息]${Font_color_suffix}"
+Error="${Red_font_prefix}[错误]${Font_color_suffix}"
+Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
+
+
 #控制
 start() {
     /etc/init.d/xn.sh start
@@ -60,7 +81,7 @@ restart() {
 # 更新本脚本
 function upgradeScript(){
     wget -Nq --no-check-certificate -O ./wubbaR "https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR"
-    green " 本脚本升级成功! "
+    green " ${Green_font_prefix}[本脚本升级成功! ]${Font_color_suffix}"
     chmod +x ./wubbaR
     sleep 2s
     exec "./wubbaR"
@@ -91,22 +112,7 @@ clean_installok(){
     clear
 }
 
-#Current folder
-clean_installok
-cur_dir=`pwd`
-wubbaaddr=""
-t1=""
-wpt=2020
-bd=
-cd /home/lhteth/ >& /dev/null
-conf_file="/home/lhteth/nginx"
-lpt="/home/wuconfigx"
-config_nginx_file="/home/lhteth/nginx/conf/nginx.conf"
 
-Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
-Info="${Green_font_prefix}[信息]${Font_color_suffix}"
-Error="${Red_font_prefix}[错误]${Font_color_suffix}"
-Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
 
 function edit_url(){
