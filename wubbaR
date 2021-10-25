@@ -10,7 +10,7 @@ export PATH
 #   Intro:  hxxxxxxxxxxxxxxxxxxx                              #
 #=================================================================#
 #rm -f wubbaR
-sh_ver="1.0.6"
+sh_ver="1.0.5"
 LANG=zh_CN.UTF-8
 clear
 
