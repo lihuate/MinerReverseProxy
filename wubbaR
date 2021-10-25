@@ -81,7 +81,7 @@ restart() {
 # 更新本脚本
 function upgradeScript(){
     wget -Nq --no-check-certificate -O ./wubbaR "https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR"
-    green " ${Green_font_prefix}[本脚本升级成功! ]${Font_color_suffix}"
+    echo -e " ${Green_font_prefix}[本脚本升级成功! ]${Font_color_suffix}"
     chmod +x ./wubbaR
     sleep 2s
     exec "./wubbaR"
