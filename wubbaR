@@ -10,7 +10,7 @@ export PATH
 #   Intro:  hxxxxxxxxxxxxxxxxxxx                              #
 #=================================================================#
 #rm -f wubbaR
-sh_ver="1.0.5"
+sh_ver="1.0.6"
 LANG=zh_CN.UTF-8
 clear
 
@@ -54,6 +54,16 @@ restart() {
         /etc/init.d/xn.sh restart
         menu_status
     fi
+}
+
+
+# 更新本脚本
+function upgradeScript(){
+    wget -Nq --no-check-certificate -O ./wubbaR "https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR"
+    green " 本脚本升级成功! "
+    chmod +x ./wubbaR
+    sleep 2s
+    exec "./wubbaR"
 }
 
 
@@ -847,7 +857,7 @@ echo -e "  wubbrR 一键管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_
     ---- wubbaR | 矿池代理 ----
 
   ${Green_font_prefix}1.${Font_color_suffix} 安装 代理矿池
-  ${Green_font_prefix}2.${Font_color_suffix} 更新 代理矿池（未实现）
+  ${Green_font_prefix}2.${Font_color_suffix} 更新 代理矿池
   ${Green_font_prefix}3.${Font_color_suffix} 卸载 代理矿池
 ————————————
   ${Green_font_prefix}4.${Font_color_suffix} 查看 代理矿池信息
@@ -870,7 +880,7 @@ case "$num" in
 	install_wubba
 	;;
 	2)
-	xxxxxx
+	upgradeScript
 	;;
 	3)
 	uninstall_wubba
