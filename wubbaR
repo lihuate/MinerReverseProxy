@@ -1,340 +1,662 @@
-#! /bin/bash
-PATH=/bin:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin:~/bin
-export PATH
+#!/bin/bash
+
 #=================================================================#
-#   System Required:  CentOS 6,7, Debian, Ubuntu                   #
+#   System Required:  CentOS 6,7,8 Debian, Ubuntu                   #
 #   Description: One click Install wubbaPool Server              #
 #   Author: wubbaR                                              #
 #   Thanks: @wubbaR <https://t.me/joinchat/K7ES0xMvjK02YzE1>       #
 #   Thanks: xxxxxxxxxxxxxxxxxxxx                           #
 #   Intro:  hxxxxxxxxxxxxxxxxxxx                              #
 #=================================================================#
-#rm -f wubbaR
-sh_ver="1.0.6"
-clear
 
-echo -e "\033[34m================================================================\033[0m
-\033[31m                欢迎使用矿池代理一键脚本                         \033[0m
-\033[31m         wubba：https://t.me/joinchat/K7ES0xMvjK02YzE1，  \033[0m
-\033[31m                非公网本地搭建 ip地址手动改成内网地址                 \033[0m
-\033[31m                vps上的端口也需要打开，不然没网                      \033[0m
-\033[31m           即将开始搭建... 建议centos6.8 x64                      \033[0m
-\033[34m================================================================\033[0m";
-echo
-echo
+export LC_ALL=C
+#export LANG=C
+export LANG=en_US.UTF-8
+export LANGUAGE=en_US.UTF-8
+sh_ver="1.1"
 
-#控制
-start() {
-    /etc/init.d/xn.sh start
-    if [ $? -eq 0 ]; then
-    menu_status
-    else
-    killall nginx
-    /etc/init.d/xn.sh start
-    menu_status
-    fi
-}
-stop() {
-        /etc/init.d/xn.sh stop
-        if [ $? -eq 0 ]; then
-        menu_status
-        else
-        killall nginx
-        /etc/init.d/xn.sh stop
-        menu_status
-    fi
-}
-restart() {
-        /etc/init.d/xn.sha restart
-        if [ $? -eq 0 ]; then
-        menu_status
-        else
-        killall nginx
-        /etc/init.d/xn.sh restart
-        menu_status
-    fi
-}
 
-aadminaddr=`pwd`
-
-# 清理安装文件
-function install_cleanup(){
-    rm -f $aadminaddr/nginx-1.21.3.tar.gz >& /dev/null
-    rm -rf $aadminaddr/nginx-1.21.3 >& /dev/null
-    rm -rf /home/wuconfigx >& /dev/null
-}
-
-# 安装前准备
-clean_installok(){
-    install_cleanup
 #如果小于65535设置ulimits：
     ulio=`ulimit -n`
     if [ $ulio -lt 65535 ]; then
     ulimit -SHn 65535
     fi
-    mkdir /home/wuconfigx >& /dev/null
-    touch /home/wuconfigx/config.txt >& /dev/null
-    touch /home/wuconfigx/xn.sh >& /dev/null
-    touch /home/lhteth/nginx/conf/nginx.conf >& /dev/null
-    clear
+
+
+# fonts color
+red(){
+    echo -e "\033[31m\033[01m$1\033[0m"
+}
+green(){
+    echo -e "\033[32m\033[01m$1\033[0m"
+}
+yellow(){
+    echo -e "\033[33m\033[01m$1\033[0m"
+}
+blue(){
+    echo -e "\033[34m\033[01m$1\033[0m"
+}
+bold(){
+    echo -e "\033[1m\033[01m$1\033[0m"
 }
 
-#Current folder
-clean_installok
-cur_dir=`pwd`
-wubbaaddr=""
-t1=""
+
+osCPU="intel"
+osArchitecture="arm"
+osInfo=""
+osRelease=""
+osReleaseVersion=""
+osReleaseVersionNo=""
+osReleaseVersionCodeName="CodeName"
+osSystemPackage=""
+osSystemMdPath=""
+osSystemShell="bash"
+
+pwd=`pwd`
 wpt=2020
+nolp=
 bd=
-cd /home/lhteth/ >& /dev/null
-conf_file="/home/lhteth/nginx"
-lpt="/home/wuconfigx"
-config_nginx_file="/home/lhteth/nginx/conf/nginx.conf"
+#配置文件辞职
+nginxConfigPath="/home/lhteth/nginx/conf/nginx.conf"
+
+FOLDER="/home/lhteth/nginx/"
+
+BIN="/home/lhteth/nginx/sbin/nginx"
+
+
+nginxAccessLogFilePath="${FOLDER}/logs/access.log"
+nginxErrorLogFilePath="${FOLDER}/logs/error.log"
+
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
 Error="${Red_font_prefix}[错误]${Font_color_suffix}"
 Tip="${Green_font_prefix}[注意]${Font_color_suffix}"
 
-#编辑
-function edit_url(){
-lpt="/home/lhteth/nginx/wuconfigx"
+
+function checkArchitecture(){
+	# https://stackoverflow.com/questions/48678152/how-to-detect-386-amd64-arm-or-arm64-os-architecture-via-shell-bash
+
+	case $(uname -m) in
+		i386)   osArchitecture="386" ;;
+		i686)   osArchitecture="386" ;;
+		x86_64) osArchitecture="amd64" ;;
+		arm)    dpkg --print-architecture | grep -q "arm64" && osArchitecture="arm64" || osArchitecture="arm" ;;
+		* )     osArchitecture="arm" ;;
+	esac
 }
+
+check_root(){
+	[[ $EUID != 0 ]] && echo -e "${Error} 当前账号非ROOT(或没有ROOT权限)，无法继续操作，请使用${Green_background_prefix} sudo su ${Font_color_suffix}来获取临时ROOT权限（执行后会提示输入当前账号的密码）。" && exit 1
+}
+
+function checkCPU(){
+	osCPUText=$(cat /proc/cpuinfo | grep vendor_id | uniq)
+	if [[ $osCPUText =~ "GenuineIntel" ]]; then
+		osCPU="intel"
+    else
+        osCPU="amd"
+    fi
+
+	#green " Status 状态显示--当前CPU是: $osCPU"
+}
+
+
+
+
+# 检测系统发行版代号
+function getLinuxOSRelease(){
+    if [[ -f /etc/redhat-release ]]; then
+        osRelease="centos"
+        osSystemPackage="yum"
+        osSystemMdPath="/usr/lib/systemd/system/"
+        osReleaseVersionCodeName=""
+    elif cat /etc/issue | grep -Eqi "debian|raspbian"; then
+        osRelease="debian"
+        osSystemPackage="apt-get"
+        osSystemMdPath="/lib/systemd/system/"
+        osReleaseVersionCodeName="buster"
+    elif cat /etc/issue | grep -Eqi "ubuntu"; then
+        osRelease="ubuntu"
+        osSystemPackage="apt-get"
+        osSystemMdPath="/lib/systemd/system/"
+        osReleaseVersionCodeName="bionic"
+    elif cat /etc/issue | grep -Eqi "centos|red hat|redhat"; then
+        osRelease="centos"
+        osSystemPackage="yum"
+        osSystemMdPath="/usr/lib/systemd/system/"
+        osReleaseVersionCodeName=""
+    elif cat /proc/version | grep -Eqi "debian|raspbian"; then
+        osRelease="debian"
+        osSystemPackage="apt-get"
+        osSystemMdPath="/lib/systemd/system/"
+        osReleaseVersionCodeName="buster"
+    elif cat /proc/version | grep -Eqi "ubuntu"; then
+        osRelease="ubuntu"
+        osSystemPackage="apt-get"
+        osSystemMdPath="/lib/systemd/system/"
+        osReleaseVersionCodeName="bionic"
+    elif cat /proc/version | grep -Eqi "centos|red hat|redhat"; then
+        osRelease="centos"
+        osSystemPackage="yum"
+        osSystemMdPath="/usr/lib/systemd/system/"
+        osReleaseVersionCodeName=""
+    fi
+
+    getLinuxOSVersion
+    checkArchitecture
+	checkCPU
+
+    [[ -z $(echo $SHELL|grep zsh) ]] && osSystemShell="bash" || osSystemShell="zsh"
+
+    green " 系统信息: ${osInfo}, 
+            操作系统发布：${osRelease},
+            操作系统发布版本：${osReleaseVersion}, 
+            操作系统发布版本号：${osReleaseVersionNo},
+            操作系统发布版本代码名称：${osReleaseVersionCodeName}, 
+            操作系统发布CPU：${osCPU} CPU 操作系统架构：${osArchitecture},
+            操作系统指令程序：${osSystemShell}, 
+            操作系统包管理：${osSystemPackage}, 
+            操作系统路径：${osSystemMdPath}"
+}
+
+
+
+
+
+
+# 检测系统版本号
+getLinuxOSVersion(){
+    if [[ -s /etc/redhat-release ]]; then
+        osReleaseVersion=$(grep -oE '[0-9.]+' /etc/redhat-release)
+    else
+        osReleaseVersion=$(grep -oE '[0-9.]+' /etc/issue)
+    fi
+
+    # https://unix.stackexchange.com/questions/6345/how-can-i-get-distribution-name-and-version-number-in-a-simple-shell-script
+
+    if [ -f /etc/os-release ]; then
+        # freedesktop.org and systemd
+        source /etc/os-release
+        osInfo=$NAME
+        osReleaseVersionNo=$VERSION_ID
+
+        if [ -n $VERSION_CODENAME ]; then
+            osReleaseVersionCodeName=$VERSION_CODENAME
+        fi
+    elif type lsb_release >/dev/null 2>&1; then
+        # linuxbase.org
+        osInfo=$(lsb_release -si)
+        osReleaseVersionNo=$(lsb_release -sr)
+    elif [ -f /etc/lsb-release ]; then
+        # For some versions of Debian/Ubuntu without lsb_release command
+        . /etc/lsb-release
+        osInfo=$DISTRIB_ID
+        
+        osReleaseVersionNo=$DISTRIB_RELEASE
+    elif [ -f /etc/debian_version ]; then
+        # Older Debian/Ubuntu/etc.
+        osInfo=Debian
+        osReleaseVersion=$(cat /etc/debian_version)
+        osReleaseVersionNo=$(sed 's/\..*//' /etc/debian_version)
+    elif [ -f /etc/redhat-release ]; then
+        osReleaseVersion=$(grep -oE '[0-9.]+' /etc/redhat-release)
+    else
+        # Fall back to uname, e.g. "Linux <version>", also works for BSD, etc.
+        osInfo=$(uname -s)
+        osReleaseVersionNo=$(uname -r)
+    fi
+}
+
+
+
+
+
+
+osPort80=""
+osPort443=""
+osSELINUXCheck=""
+osSELINUXCheckIsRebootInput=""
+
+function testLinuxPortUsage(){
+
+    if [ "$osRelease" == "centos" ]; then
+
+        red " 关闭防火墙 firewalld"
+        ${sudoCmd} systemctl stop firewalld
+        ${sudoCmd} systemctl disable firewalld
+
+
+        red " 关闭防火墙 ufw"
+        ${sudoCmd} systemctl stop ufw
+        ${sudoCmd} systemctl disable ufw
+        
+    elif [ "$osRelease" == "debian" ]; then
+        $osSystemPackage update -y
+    fi
+
+}
+
+
+
+
+
+
+
+
+
+function setLinuxDateZone(){
+
+    tempCurrentDateZone=$(date +'%z')
+
+    echo
+    if [[ ${tempCurrentDateZone} == "+0800" ]]; then
+        yellow "当前时区已经为北京时间  $tempCurrentDateZone | $(date -R) "
+    else 
+        green " =================================================="
+        yellow " 当前时区为: $tempCurrentDateZone | $(date -R) "
+        yellow " 是否设置时区为北京时间 +0800区, 以便cron定时重启脚本按照北京时间运行."
+        green " =================================================="
+        # read 默认值 https://stackoverflow.com/questions/2642585/read-a-variable-in-bash-with-a-default-value
+
+        read -p "是否设置为北京时间 +0800 时区? 请输入[Y/n]:" osTimezoneInput
+        osTimezoneInput=${osTimezoneInput:-Y}
+
+        if [[ $osTimezoneInput == [Yy] ]]; then
+            if [[ -f /etc/localtime ]] && [[ -f /usr/share/zoneinfo/Asia/Shanghai ]];  then
+                mv /etc/localtime /etc/localtime.bak
+                cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+
+                yellow "设置成功! 当前时区已设置为 $(date -R)"
+                green " =================================================="
+            fi
+        fi
+
+    fi
+    echo
+}
+
+
+
+
+
+
+function Install_nginx(){
+	if [[ -e ${nginxConfigPath} ]]; then
+		green " nginx 已安装 , 是否覆盖安装(更新)？[y/N]"
+		read -e -p "(默认: n):" yn
+		[[ -z ${yn} ]] && yn="n"
+		if [[ ${yn} == [Nn] ]]; then
+			echo "已取消..." && exit 1
+		fi
+	else
+		green " nginx 未安装，开始安装..."
+	fi
+
+    # 下载nginx文件
+    if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
+        echo "下载nginx文件失败！"
+
+            if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz http://nginx.org/download/nginx-1.21.3.tar.gz; then
+        echo "下载nginx文件失败！"
+        exit 1
+    fi
+        exit 1
+    fi
+
+		green " 解压..."
+		tar -xzf ${pwd}/nginx-1.21.3.tar.gz && cd ${pwd}/nginx-1.21.3
+		green " 编译安装..."
+		./configure --prefix=/home/lhteth/nginx --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module && make -j$Nolp && make install
+        
+
+
+	[[ ! -e ${BIN} ]] && red " nginx 安装失败 !" && exit 1
+
+
+	echo && green " nginx 安装成功 !" && echo
+}
+
+
+
+
+
+
+
+
+
+function service_nginx_centos(){
+	cat > /etc/init.d/xnd<<-EOF
+#!/bin/bash
+# chkconfig: 2345 90 10
+# description: nginx
+
+### BEGIN INIT INFO
+# Provides:          nginx
+# Required-Start:    \$network \$syslog
+# Required-Stop:     \$network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Lightweight SOCKS5 proxy tool
+# Description:       Start or stop the nginx server
+### END INIT INFO
+
+NAME="nginx"
+NAME_BIN="nginx"
+FOLDER="/home/lhteth/nginx"
+BIN="/home/lhteth/nginx/sbin/nginx"
+
+check_running(){
+	PID=`PID=\`ps -ef |grep -v grep | grep nginx |awk '{print \$2}'\`
+	if [[ ! -z \${PID} ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+do_start(){
+	check_running
+	if [[ \$? -eq 0 ]]; then
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME (PID ${PID}) 正在运行..." && exit 0
+	else
+		cd \${FOLDER}
+		nohup "\$BIN"  &
+		sleep 2s
+		check_running
+		if [[ \$? -eq 0 ]]; then
+			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 启动成功 !"
+		else
+			echo -e "\${Error_font_prefix}[错误]\${Font_suffix} \$NAME 启动失败 !"
+		fi
+	fi
+}
+do_stop(){
+	check_running
+	if [[ \$? -eq 0 ]]; then
+		kill -9 \${PID}
+		RETVAL=\$?
+		if [[ \$RETVAL -eq 0 ]]; then
+			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 停止成功 !"
+		else
+			echo -e "\${Error_font_prefix}[错误]\${Font_suffix} \$NAME 停止失败 !"
+                        echo -e "\${Error_font_prefix}[错误]\${Font_suffix} \$NAME killall !"
+                        killall nginx
+		fi
+	else
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 未运行"
+		RETVAL=1
+	fi
+}
+do_status(){
+	check_running
+	if [[ \$? -eq 0 ]]; then
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME (PID \${PID}) 正在运行..."
+	else
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 未运行 !"
+		RETVAL=1
+	fi
+}
+do_restart(){
+	do_stop
+	do_start
+}
+do_reload(){
+        \$BIN -s reload
+}
+case "\$1" in
+	start|stop|restart|status|reload)
+	do_\$1
+	;;
+	*)
+	echo -e "使用方法: \$0 { start | stop | restart | status reload }"
+	RETVAL=1
+	;;
+esac
+exit \$RETVAL
+EOF
+}
+
+
+
+function service_nginx_debian(){
+	cat > /etc/init.d/xnd<<-EOF
+### BEGIN INIT INFO
+# Provides:          nginx
+# Required-Start:    \$network \$local_fs \$remote_fs
+# Required-Stop:     \$network \$local_fs \$remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Lightweight SOCKS5 proxy tool
+# Description:       Start or stop the nginx server
+### END INIT INFO
+
+NAME="nginx"
+NAME_BIN="nginx"
+FOLDER="/home/lhteth/nginx/"
+BIN="/home/lhteth/nginx/sbin/nginx"
+
+
+check_running(){
+	PID=\`ps -ef |grep -v grep | grep nginx |awk '{print \$2}'\`
+	if [[ ! -z \${PID} ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
+do_start(){
+	check_running
+	if [[ \$? -eq 0 ]]; then
+	echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME (PID \${PID}) 正在运行..." && exit 0
+	else
+		cd \${FOLDER}
+		#python_ver=\$(ls /usr/bin|grep -e "^python[23]\.[1-9]\+\$"|tail -1)
+
+		nohup  "\$BIN" &
+		sleep 2s
+		check_running
+		if [[ \$? -eq 0 ]]; then
+			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 启动成功 !"
+		else
+			echo -e "\${Error_font_prefix}[错误]\${Font_suffix} \$NAME 启动失败 !"
+		fi
+	fi
+}
+do_stop(){
+	check_running
+	if [[ \$? -eq 0 ]]; then
+		kill -9 \${PID}
+		RETVAL=\$?
+		if [[ \$RETVAL -eq 0 ]]; then
+			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 停止成功 !"
+		else
+			echo -e "\${Error_font_prefix}[错误]\${Font_suffix}\$NAME 停止失败 !"
+            killall nginx
+			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 强行停止 !"
+		fi
+	else
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 未运行 !"
+		RETVAL=1
+	fi
+}
+do_status(){
+	check_running
+	if [[ \$? -eq 0 ]]; then
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME (PID \${PID}) 正在运行..."
+	else
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 未运行 !"
+		RETVAL=1
+	fi
+}
+
+do_reload() {
+    \$BIN -s reload
+}
+
+do_restart(){
+	do_stop
+	do_start
+}
+case "\$1" in
+	start|stop|restart|status|reload)
+	do_\$1
+	;;
+	*)
+	echo "使用方法: \$0 { start | stop | restart | status | reload }"
+	RETVAL=1
+	;;
+esac
+exit \$RETVAL
+EOF
+}
+
+
+
+
+
+#服务
+function Service_nginx(){
+	if [[ ${release} = "centos" ]]; then
+		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/nginx_centos -O /etc/init.d/xnd; then
+		#	red " nginx服务 管理脚本下载失败 !" && exit 1
+		#fi
+        service_nginx_centos
+		chmod +x /etc/init.d/xnd
+		chkconfig --add xnd
+		chkconfig xnd on
+	else
+		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/nginx_debian -O /etc/init.d/xnd; then
+			#red " nginx服务 管理脚本下载失败 !" && exit 1
+		#fi
+        service_nginx_debian
+		chmod +x /etc/init.d/xnd
+		update-rc.d -f xnd defaults
+	fi
+	green " nginx 管理脚本下载完成 !"
+}
+
+
+
+
+
+
+
 
 # 更新本脚本
 function upgradeScript(){
-    wget -Nq --no-check-certificate -O ./wubbaR "https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR"
-    echo -e " ${Green_font_prefix}[本脚本升级成功! ]${Font_color_suffix}"
-    chmod +x ./wubbaR
+    wget -Nq --no-check-certificate -O ./wubbaR2 "https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR2"
+    green " [本脚本升级成功! ]"
+    chmod +x ./wubbaR2
     sleep 2s
-    exec "./wubbaR"
-}
-
-# 准备工作
-prewget()
-{
-    # 查看物理CPU个数
-    co=$( awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo )
-    # 查看每个物理CPU中core的个数(即核数)
-    #cb=$(cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l)
-    #echo "$co  $cb"
-    # 查看逻辑CPU的个数
-    t1=$(cat /proc/cpuinfo| grep "processor"| wc -l)
-    #线程数
-   # ta=$((10#${co}+0))
-    #tb=$((10#${cb}+0))
-    #echo "$ta + $tb"
-    #t1=$[ta * tb]
-    #echo $t1
-
-    #进程最大可打开文件数
-    ulim=$( ulimit -n )
-    #内核
-	kern=$( uname -r )  
-    #IP
-	IP=$(ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1)
-     if [[ "$IP" = "" ]]; then
-    IP=$(wget -qO- -t1 -T2 ipv4.icanhazip.com)
-     fi
-    #地理位置
-	IPaddr=$(curl -s myip.ipip.net | awk -F '：' '{print $3}')
-	if [ "$IP" == "" ]; then
-		IP=$(curl -s ip.cn | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}')
-		IPaddr=$(curl -s ip.cn | awk -F '：' '{print $3}')	
-	fi
-}
-
-# Check OS
-function checkos(){
-	[[ -f /etc/redhat-release ]] && os='centos'
-	[[ ! -z "`egrep -i debian /etc/issue`" ]] && os='debian'
-	[[ ! -z "`egrep -i ubuntu /etc/issue`" ]] && os='ubuntu'
-	[[ "$os" == '' ]] && echo 'Error: Your system is not supported to run it!' && exit 1
+    exec "./wubbaR2"
 }
 
 
-# 确保只有root用户才能运行脚本
-function rootness(){
-    if [[ $EUID -ne 0 ]]; then
-       echo "Error:此脚本必须以root用户身份运行!" 1>&2
-       exit 1
+
+# 软件安装
+
+function installSoftDownload(){
+
+
+	if [[ "${osRelease}" == "debian" || "${osRelease}" == "ubuntu" ]]; then
+		if ! dpkg -l | grep -qw wget; then
+			${osSystemPackage} -y install wget git unzip
+			
+			# https://stackoverflow.com/questions/11116704/check-if-vt-x-is-activated-without-having-to-reboot-in-linux
+		fi
+
+		if ! dpkg -l | grep -qw curl; then
+			${osSystemPackage} -y install curl git unzip
+			
+		fi
+
+	elif [[ "${osRelease}" == "centos" ]]; then
+        if ! rpm -qa | grep -qw wget; then
+		    ${osSystemPackage} -y install wget curl git unzip
+        elif ! rpm -qa | grep -qw git; then
+		    ${osSystemPackage} -y install wget curl git unzip
+		fi
+	fi 
+}
+
+
+function installPackage(){
+    echo
+    green " =================================================="
+    yellow " 开始安装软件"
+    green " =================================================="
+    echo
+
+    if [ "$osRelease" == "centos" ]; then
+
+        ${osSystemPackage} update -y
+        ${osSystemPackage} install -y gcc curl curl-devel zlib zlib-devel pcre pcre-devel openssl openssl-devel
+
+    elif [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then      
+        # https://joshtronic.com/2018/12/17/how-to-install-the-latest-nginx-on-debian-and-ubuntu/
+        # https://www.nginx.com/resources/wiki/start/topics/tutorials/install/   
+
+        $osSystemPackage install -y gnupg2
+        $osSystemPackage install -y wget
+        $osSystemPackage install -y gcc
+        $osSystemPackage install -y curl
+        $osSystemPackage install -y curl-devel
+        $osSystemPackage install -y ibpcre3 libpcre3-dev
+        $osSystemPackage install -y zlib1g zlib1g-dev
+        $osSystemPackage install -y openssl libssl-dev
+        $osSystemPackage install -y build-essential
+
+        ${osSystemPackage} update -y  
+
     fi
 }
 
-#查看pid
-check_pid(){
-	PID=`ps -ef |grep -v grep | grep nginx |awk '{print $2}'`
-}
 
-# Check OS
-function checkos(){
-	[[ -f /etc/redhat-release ]] && os='centos'
-	[[ ! -z "`egrep -i debian /etc/issue`" ]] && os='debian'
-	[[ ! -z "`egrep -i ubuntu /etc/issue`" ]] && os='ubuntu'
-	[[ "$os" == '' ]] && echo 'Error: Your system is not supported to run it!' && exit 1
-}
-
-# Get version
-function getversion(){
-    if [[ -s /etc/redhat-release ]];then
-        grep -oE  "[0-9.]+" /etc/redhat-release
-    else    
-        grep -oE  "[0-9.]+" /etc/issue
-    fi    
-}
-
-# CentOS version
-function centosversion(){
-    local code=$1
-    local version="`getversion`"
-    local main_ver=${version%%.*}
-    if [ $main_ver == $code ];then
-        return 0
-    else
-        return 1
-    fi        
-}
-
-# Disable selinux
-function disable_selinux(){
-if [ -s /etc/selinux/config ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
-    sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
-    setenforce 0
-fi
-}
-
-#强制关闭
-function killall_nginx(){
-killall nginx
-
-}
-
-#软件环境
-function install_app(){
-	if [ "$os" == 'centos' ]; then
-		#yum -y install make gcc gcc-c++
-        yum install wget gcc -y
-        yum install  curl curl-devel zlib zlib-devel pcre pcre-devel openssl openssl-devel -y
-
-        if [ $? -ne 0 ]; then
-         # Notyumreper CentOS 5
-    if centosversion 6; then
-        echo "换腾讯源."
-        mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
-        wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.cloud.tencent.com/repo/centos6_base.repo    
-        sed -i 's#http#https#g' /etc/yum.repos.d/CentOS-Base.repo
-        yum clean all
-        yum makecache
-        exit 1
-        fi
+#控制
+start() {
+    check_pid
+	if [[  -z "${PID}" ]]; then
+    etc/init.d/xnd start
     fi
-
-	else
-        apt install wget -y           
-        apt install gcc -y 
-        apt install curl -y 
-        apt install curl-devel -y 
-        apt install libpcre3 libpcre3-dev -y
-        apt install zlib1g zlib1g-dev -y
-        apt install openssl libssl-dev -y
-        apt install sysv-rc-conf -y
-	fi
-}
-
-# Pre-installation settings
-function pre_install(){
-    # Not support CentOS 5
-    if centosversion 5; then
-        echo "不支持CentOS 5，请将操作系统更改为CentOS 6+/Debian 7+/Ubuntu 12+，然后重试."
-        exit 1
-    fi
-    # 设置矿池地址
-    while true
-    do
-    while true
-    do
-    poolnumber=`expr $poolnumber + 1`;
-    echo -e  "请输入\033[31m$poolnumber\033[0m号矿池代理地:"
-    read -p "(默认flexpool池: eth-hk.flexpool.io:5555):" wubbaaddr
-    [ -z "$wubbaaddr" ] && wubbaaddr="eth-hk.flexpool.io:5555"
-
-    expr ${wubbaaddr#*:} + 0 &>/dev/null
     if [ $? -eq 0 ]; then
-        if [ ${wubbaaddr#*:} -ge 1 ] && [ ${wubbaaddr#*:} -le 65535 ]; then
-            echo
-            echo "$wubbaaddr" >> /home/wuconfigx/config.txt
-            echo "---------------------------"
-            echo "paddr = $wubbaaddr"
-            echo "---------------------------"
-            echo
-            break
-        else
-            echo "输入错误,举例：（eth.beepool.io:1234）！"
-            poolnumber=
-        fi
+    menu_status
     else
-        echo "输入错误,举例：（eth.beepool.io:1234）！"
-        poolnumber=
-    fi
-done
-
-    # 设置矿池端口  [注意]"
-    while true
-    do
-    echo -e "请输入\033[31m$poolnumber\033[0m号矿池连接端口,不设置将默认$wpt端口:"
-    read -p "(默认自动设置端口为$wpt):" wubbaport
-    [ -z "$wubbaport" ] && wubbaport="$wpt"
-    
-    expr $wubbaport + 0 &>/dev/null
-    if [ $? -eq 0 ]; then
-        if [ $wubbaport -ge 1 ] && [ $wubbaport -le 65535 ]; then
-            echo
-            echo "$wubbaport" >> /home/wuconfigx/config.txt
-            echo "---------------------------"
-            echo "port = $wubbaport"
-            echo "---------------------------"
-            echo
-            wpt=`expr $wpt + 1`;
-            break
-        else
-            echo "输入错误，请输入1-65535之间的数字！"
-        fi
-    else
-        echo "输入错误，请输入1-65535之间的数字！"
-    fi
-    done
-
-    echo -e "\033[31m继续添加矿池[y]？,不设置将默认[否]:\033[0m";
-    read -p "(默认停止添加其他矿池):" ispool
-    if [ -z "$ispool" ];then
-        break
-    fi
-    done
-    cd $cur_dir
-}
-# 下载文件
-function download_files(){
-    # 下载nginx文件
-    if ! wget --no-check-certificate -O nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
-        echo "下载nginx文件失败！"
-
-            if ! wget --no-check-certificate -O nginx-1.21.3.tar.gz http://nginx.org/download/nginx-1.21.3.tar.gz; then
-        echo "下载nginx文件失败！"
-        exit 1
-    fi
-        exit 1
+    killall nginx
+    /etc/init.d/xnd start
+    menu_status
     fi
 }
+stop() {
+        /etc/init.d/xnd stop
+        if [ $? -eq 0 ]; then
+        menu_status
+        else
+        killall nginx
+        /etc/init.d/xnd stop
+        menu_status
+    fi
+}
+restart() {
+        /etc/init.d/xnda restart
+        if [ $? -eq 0 ]; then
+        menu_status
+        else
+        killall nginx
+        /etc/init.d/xnd restart
+        menu_status
+    fi
+}
+
 
 # 防火墙设置firewall_set_drop  firewall_set
-function firewall_set(){
+function firewall_set_ACCEPT(){
     echo "防火墙设置启动..."
     if centosversion 6; then
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             uname-a
             if [ $? -ne 0 ]; then
-                wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+                wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
                 len=${#wp_array[@]}
                 for((i=0;i<len;i+=2))
                     do
@@ -369,7 +691,7 @@ function firewall_set(){
     elif centosversion 7; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
-            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+            wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
             len=${#wp_array[@]}
             for((i=0;i<len;i+=2))
             do
@@ -385,7 +707,7 @@ function firewall_set(){
             echo "Firewalld看起来没有运行，请尝试启动..."
             systemctl start firewalld
             if [ $? -eq 0 ];then
-            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+            wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
             len=${#wp_array[@]}
             for((i=0;i<len;i+=2))
             do
@@ -406,9 +728,6 @@ function firewall_set(){
     echo "防火墙设置完成..."
 }
 
-
-
-
 # 防火墙设置关闭
 function firewall_set_drop(){
     echo "防火墙设置启动..."
@@ -417,7 +736,7 @@ function firewall_set_drop(){
         if [ $? -eq 0 ]; then
             uname-a
             if [ $? -ne 0 ]; then
-                wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+                wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
                 len=${#wp_array[@]}
                 for((i=0;i<len;i+=2))
                     do
@@ -450,7 +769,7 @@ function firewall_set_drop(){
     elif centosversion 7; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
-            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+            wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
             len=${#wp_array[@]}
             for((i=0;i<len;i+=2))
             do
@@ -466,7 +785,7 @@ function firewall_set_drop(){
             echo "Firewalld看起来没有运行，请尝试启动..."
             systemctl start firewalld
             if [ $? -eq 0 ];then
-            wp_array=($(awk '{print}' /home/wuconfigx/config.txt))
+            wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
             len=${#wp_array[@]}
             for((i=0;i<len;i+=2))
             do
@@ -488,15 +807,127 @@ function firewall_set_drop(){
 }
 
 
+# 清理安装文件
+function install_cleanup(){
+    rm -f $pwd/nginx-1.21.3.tar.gz >& /dev/null
+    rm -rf $pwd/nginx-1.21.3 >& /dev/null
+    rm -rf $pwd/wub >& /dev/null
+}
 
-# Config wubbaPool
+
+#关闭nginx服务
+function stopServiceNginx(){
+    serviceNginxStatus=`ps -aux | grep "nginx: worker" | grep -v "grep"`
+    if [[ -n "$serviceNginxStatus" ]]; then
+        ${sudoCmd} systemctl stop nginx.service
+    fi
+}
+
+
+
+# 查看
+function view_pool_config(){
+    clear
+    xbbainit
+	if [[ -e ${nginxConfigPath} ]]; then
+            yellow " ================================================== "
+            yellow " ================================================== "
+        poolnumbe=
+        wp_array=($(awk '{print}' /home/lhteth/nginx/wub/config.txt))
+        len=${#wp_array[@]}
+        for((i=0;i<len;i+=2))
+        do
+        poolnumbe=`expr $poolnumbe + 1`;
+        wpip=${wp_array[i]}
+        wpport=${wp_array[i+1]}
+
+        red "本地矿池节点$poolnumbe: \033[31m ${IP}:${wpport} \033[0m"
+        red "远程矿池地址$poolnumbe: \033[31m ${wpip} \033[0m";
+        done
+        echo -e "地理位置：${IPaddr}"
+        echo -e "线程数：${Nolp}."
+        echo -e "进程最大可打开文件数：${ulim}."
+            yellow " ================================================== "
+            yellow " ================================================== "
+
+            green "nginx 配置路径 ${nginxConfigPath} "
+            green "nginx 访问日志 ${nginxAccessLogFilePath} "
+            green "nginx 错误日志 ${nginxErrorLogFilePath} "
+
+            green "nginx 查看日志命令: [ journalctl -n 50 -u nginx.service ] "
+ 
+            green "nginx 启动命令: [ nginx ] 或 [ systemctl start nginx.service ] "
+            green "nginx 停止命令: [ nginx -s stop ] 或 [ systemctl stop nginx.service ] "
+            green "nginx 重启命令: [ nginx -s restart ] 或 [ systemctl restart nginx.service ] "
+           green "nginx 查看运行状态命令: [ systemctl status nginx.service ] "
+        else
+        echo  -e "请先安装！ $Tip "
+        fi
+}
+
+
+
+
+
+
+
+
+
+
+# 修改
+function config_edit(){
+
+	if [[ -e ${nginxConfigPath} ]]; then
+    cp /home/lhteth/nginx/wub/config.txt /home/lhteth/nginx/wub/config.txt.bak &>/dev/null
+    xbbainit
+    firewall_set_drop
+    rm -rf /home/lhteth/nginx/wub/config.txt &>/dev/null
+    rm -rf /home/lhteth/nginx/conf/nginx.conf &>/dev/null
+    rm -rf /home/wub/config.txt &>/dev/null
+    config_pool_set
+    cp /home/wub/config.txt  /home/lhteth/nginx/wub/config.txt &>/dev/null
+    config_wubba
+    rm -rf $pwd/wub
+    nginx -t
+    if [ $? -eq 0 ]; then
+    cp /home/lhteth/nginx/wub/config.txt /home/lhteth/nginx/wub/config.txt.bak &>/dev/null
+    touch /home/lhteth/nginx/wub/ture &>/dev/null
+    cd /home/lhteth/nginx/sbin/
+        killall nginx
+            if [ $? -eq 0 ]; then
+          echo -e " 当前状态: ${Green_font_prefix}关闭成功${Font_color_suffix} "
+          else
+          echo -e " 当前状态: ${Red_font_prefix}已关闭${Font_color_suffix}  "
+          fi
+    start
+          if [ $? -eq 0 ]; then
+          echo -e " 当前状态: ${Green_font_prefix}nginx成功${Font_color_suffix} "
+          view_pool_config
+          else
+          echo -e " 当前状态: ${Red_font_prefix}nginx失败，请手动开启${Font_color_suffix}  "
+          fi
+    green "succeed"
+else
+    mv /home/lhteth/nginx/wub/config.txt.bak /home/lhteth/nginx/wub/config.txt
+    config_wubba
+    green "failed配置已恢复"
+fi
+        else
+        echo
+        echo  -e "请先安装！ $Tip "
+        echo
+        fi
+        firewall_set_ACCEPT
+}
+
+
+# 配置
 function config_wubba(){
-    checkos
-    prewget
+    xbbainit
     rm -rf  /home/lhteth/nginx/conf/nginx.conf
     touch /home/lhteth/nginx/conf/nginx.conf
     echo "
-worker_processes ${t1};
+worker_processes ${Nolp};
 events {
     use epoll;
     accept_mutex on;
@@ -507,7 +938,7 @@ stream {
  " >> /home/lhteth/nginx/conf/nginx.conf
 
 
-wp_array=($(awk '{print}' /home/lhteth/nginx/wuconfigx/config.txt))
+wp_array=($(awk '{print}' /home/lhteth/nginx/wub/config.txt))
 len=${#wp_array[@]}
 for((i=0;i<len;i+=2))
 do
@@ -530,209 +961,20 @@ echo "}" >> /home/lhteth/nginx/conf/nginx.conf
 }
 
 
-# 查看
-function view_pool_config(){
-    clear
-    prewget
-	if [[ -e ${config_nginx_file} ]]; then
-        poolnumbe=
-        wp_array=($(awk '{print}' /home/lhteth/nginx/wuconfigx/config.txt))
-        len=${#wp_array[@]}
-        for((i=0;i<len;i+=2))
-        do
-        poolnumbe=`expr $poolnumbe + 1`;
-        wpip=${wp_array[i]}
-        wpport=${wp_array[i+1]}
-        echo -e "本地矿池节点$poolnumbe: \033[31m ${IP}:${wpport} \033[0m"
-        echo -e "远程矿池地址$poolnumbe: \033[31m ${wpip} \033[0m";
-        done
-        echo
-        echo -e "地理位置：${IPaddr}"
-        echo -e "线程数：${t1}."
-        echo -e "进程最大可打开文件数：${ulim}."
-        echo ""
-        else
-        echo
-        echo  -e "请先安装！ $Tip "
-        echo
-        fi
-}
-
-
-#重置配置
-function config_inithok(){
-    addr_true=$conf_file/wuconfigx/ture
-    if [[ -e ${addr_true} ]]; then
-    cp /home/lhteth/nginx/wuconfigx/config.txt.bak /home/lhteth/nginx/wuconfigx/config.txt
-    nginx -t
-        if [ $? -eq 0 ]; then
-          echo -e " 当前状态: ${Green_font_prefix}成功${Font_color_suffix} "
-          fi
-    fi
-     echo -e " 当前状态:  ${Red_font_prefix}失败${Font_color_suffix} "
-}
-
-
-
-# 修改
-function config_edit(){
-    checkos
-    edit_url
-	if [[ -e ${config_nginx_file} ]]; then
-    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak &>/dev/null
-    prewget
-    firewall_set_drop
-    rm -rf /home/lhteth/nginx/wuconfigx/config.txt &>/dev/null
-    rm -rf /home/lhteth/nginx/conf/nginx.conf &>/dev/null
-    rm -rf /home/wuconfigx/config.txt &>/dev/null
-    pre_install
-    cp /home/wuconfigx/config.txt  /home/lhteth/nginx/wuconfigx/config.txt &>/dev/null
-    config_wubba
-    rm -rf /home/wuconfigx/
-    nginx -t
-    if [ $? -eq 0 ]; then
-    cp /home/lhteth/nginx/wuconfigx/config.txt /home/lhteth/nginx/wuconfigx/config.txt.bak &>/dev/null
-    touch /home/lhteth/nginx/wuconfigx/ture &>/dev/null
-    cd /home/lhteth/nginx/sbin/
-        killall_nginx
-            if [ $? -eq 0 ]; then
-          echo -e " 当前状态: ${Green_font_prefix}关闭成功${Font_color_suffix} "
-          else
-          echo -e " 当前状态: ${Red_font_prefix}已关闭${Font_color_suffix}  "
-          fi
-    start
-          if [ $? -eq 0 ]; then
-          echo -e " 当前状态: ${Green_font_prefix}nginx成功${Font_color_suffix} "
-          view_pool_config
-          else
-          echo -e " 当前状态: ${Red_font_prefix}nginx失败，请手动开启${Font_color_suffix}  "
-          fi
-    echo "succeed"
-else
-    mv /home/lhteth/nginx/wuconfigx/config.txt.bak /home/lhteth/nginx/wuconfigx/config.txt
-    config_wubba
-    echo "failed配置已恢复"
-fi
-        firewall_set
-        else
-        echo
-        echo  -e "请先安装！ $Tip "
-        echo
-        fi
-}
-
-
-# 开机自启
-function config_init(){
-    checkos
-    cat > /home/lhteth/nginx/wuconfigx/xn.sh<<-EOF
-#!/bin/sh
-#
-#chkconfig: 2345 80 90
-#description: nginx
-start() {
-    /home/lhteth/nginx/sbin/nginx
-}
-reload() {
-    /home/lhteth/nginx/sbin/nginx -s reload
-}
-stop() {
-    /home/lhteth/nginx/sbin/nginx -s quit
-}
-case "\$1" in
-  start)
-    start
-    ;;
-  stop)
-    stop
-    ;;
-  restart)
-    stop
-    start
-    ;;
-  reload)
-    reload
-    ;;
-  *)
-echo $"Usage: $0 {start|stop|restart|reload}"
-exit 1
-esac
-EOF
-          cp /home/lhteth/nginx/wuconfigx/xn.sh /etc/init.d/xn.sh
-           chmod 777  /etc/init.d/xn.sh
-	if [ "$os" == 'centos' ]; then
-        echo "etc/init.d/xn.sh start" > /etc/rc.d/rc.local 
-        chmod +x /etc/rc.d/rc.local 
-	else
-
-    
-       sudo update-rc.d etc/init.d/xn.sh defaults 90 
-	fi
-
-}
 
 
 
 
-#关闭防火墙特定端口
-function iptfw_drop(){
- iptfw=$1
-  iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport  -j ${iptfw}
-  iptables -I INPUT -m state --state NEW -m tcp -p tcp --dport  -j ${iptfw}
-}
-
-# Install wubbaPool
-function install_pool(){
-    # Install nginx
-    useradd www
-    chmod 777 nginx-1.21.3.tar.gz
-    tar zxf nginx-1.21.3.tar.gz
-    cd $cur_dir/nginx-1.21.3
-    ./configure --prefix=/home/lhteth/nginx --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module
-    sleep 1
-    make
-    sleep_time 79
-    make install
-    sleep_time 89
-    ln -s /home/lhteth/nginx/sbin/nginx /usr/bin >& /dev/null
-    ln -s /root/wubbaR /usr/bin >& /dev/null
-    # Install wubbaPool
-        cd $cur_dir
-        nginx -v
-        # Run wubbaPool in the background
-        if [ $? -eq 0 ]; then
-        prewget
-        clear
-        sleep 1
-        mv /home/wuconfigx/ $conf_file/
-        lpt="/home/lhteth/nginx/wuconfigx"
-        echo "/home/lhteth/nginx/wuconfigx" >> /home/lhteth/nginx/wuconfigx/edit_true
-        config_wubba
-        config_init
-        cd $conf_file
-        sleep_time 99
-        echo
-        echo "恭喜你，wubbaPool安装完成！"
-        view_pool_config
-        echo "=================稍等片刻！================"
-        echo ""
-        echo -e "${Green_font_prefix}安装完毕！${Font_color_suffix}"
-        echo
-        echo ""
-        menu_status
-    else
-        echo "wubbaPool安装失败!"
-        install_cleanup
-        exit 1
-    fi
-
-    echo "正在自动调用开启命令。。。。。。"
-}
 
 
+#删除
+function removeNginx(){
 
-# 卸载
-function uninstall_wubba(){
+    echo
+    green " ================================================== "
+    red " 准备卸载已安装的nginx"
+    green " ================================================== "
+    echo
     printf "你确定卸载wubbaPool？ (y/n) "
     printf "\n"
     read -p "(Default: n):" answer
@@ -740,85 +982,183 @@ function uninstall_wubba(){
         answer="n"
     fi
     if [ "$answer" = "y" ]; then
-        nginx -s stop > /dev/null 2>&1
-        if [ $? -eq 0 ]; then
-        ps -ef |grep nginx 
-            echo"停止成功"
-        fi
         killall nginx
-        checkos
-	if [ "$os" == 'centos' ]; then
-            chkconfig --del xn.sh
+	if [ "$osRelease" == 'centos' ]; then
+            chkconfig --del xnd
+
         else
-            update-rc.d -f xn.sh remove
+            update-rc.d -f xnd remove
         fi
 
-        find / -name nginx* -exec rm -rf {} \;
-        rm -rf /home/lhteth/ >& /dev/null
-        rm -f /etc/init.d/xn.sh >& /dev/null
-        rm -rf /usr/bin/nginx >& /dev/null
-        rm -rf /home/wuconfigx >& /dev/null
-        rm -rf /usr/bin/nginx >& /dev/null
-        rm -rf /usr/bin/wubbaR >& /dev/null
-        echo -e "wubbaPool  ${Green_font_prefix}卸载成功!${Font_color_suffix}"
+         ssnginx=`find / -name nginx`
+         rm -rf $ssnginx
+        green " ================================================== "
+        green "[ wubbaPool 卸载成功! ]"
     else
-        echo "卸载已取消，无需执行任何操作"
+        green "[ 卸载已取消，无需执行任何操作 ]"
     fi
+    green " ================================================== "
+    echo
 }
 
-function sleep_time(){
 
-total_stdy="$(($(stty size|cut -d' ' -f1)))"
-total_stdx="$(($(stty size|cut -d' ' -f2)))"
 
-head="Progress bar: "
-total=$[${total_stdx} - ${#head}*2]
+# 设置反向代理配置文件
+function config_pool_set(){
+    # 设置矿池地址
+    while true
+    do
+    while true
+    do
+    poolnumber=`expr $poolnumber + 1`;
+    echo -e  "请输入\033[31m$poolnumber\033[0m号矿池代理地:"
+    read -p "(默认flexpool池: eth-hk.flexpool.io:5555):" wubbaaddr
+    [ -z "$wubbaaddr" ] && wubbaaddr="eth-hk.flexpool.io:5555"
 
-i=$1
-loop=100
-while [ $i -lt $loop ]
-do
-    let i=i+1
-    
-    per=$[${i}*${total}/${loop}]
-    remain=$[${total} - ${per}]
-    printf "\r\e[${total_stdy};0H${head}\e[42m%${per}s\e[47m%${remain}s\e[00m" "" ""
-    sleep 0.1
+    expr ${wubbaaddr#*:} + 0 &>/dev/null
+    if [ $? -eq 0 ]; then
+        if [ ${wubbaaddr#*:} -ge 1 ] && [ ${wubbaaddr#*:} -le 65535 ]; then
+            echo
+            echo "$wubbaaddr" >>  $FOLDER/wub/config.txt
+            echo "---------------------------"
+            echo "paddr = $wubbaaddr"
+            echo "---------------------------"
+            echo
+            break
+        else
+            echo "输入错误,举例：（eth.beepool.io:1234）！"
+            poolnumber=
+        fi
+    else
+        echo "输入错误,举例：（eth.beepool.io:1234）！"
+        poolnumber=
+    fi
 done
 
-echo ""
+    # 设置矿池端口  [注意]"
+    while true
+    do
+    echo -e "请输入\033[31m$poolnumber\033[0m号矿池连接端口,不设置将默认$wpt端口:"
+    read -p "(默认自动设置端口为$wpt):" wubbaport
+    [ -z "$wubbaport" ] && wubbaport="$wpt"
+    
+    expr $wubbaport + 0 &>/dev/null
+    if [ $? -eq 0 ]; then
+        if [ $wubbaport -ge 1 ] && [ $wubbaport -le 65535 ]; then
+            echo
+            echo "$wubbaport" >> $FOLDER/wub/config.txt
+            echo "---------------------------"
+            echo "port = $wubbaport"
+            echo "---------------------------"
+            echo
+            wpt=`expr $wpt + 1`;
+            break
+        else
+            echo "输入错误，请输入1-65535之间的数字！"
+        fi
+    else
+        echo "输入错误，请输入1-65535之间的数字！"
+    fi
+    done
+
+    echo -e "\033[31m继续添加矿池[y]？,不设置将默认[否]:\033[0m";
+    read -p "(默认停止添加其他矿池):" ispool
+    if [ -z "$ispool" ];then
+        break
+    fi
+    done
+    cd $cur_dir
 }
+
+
+
+
+# 准备工作
+xbbainit()
+{
+    # 查看物理CPU个数
+    co=$( awk -F: '/model name/ {core++} END {print core}' /proc/cpuinfo )
+
+    # 查看逻辑CPU的个数
+    Nolp=$(cat /proc/cpuinfo| grep "processor"| wc -l)
+
+    #进程最大可打开文件数
+    ulim=$( ulimit -n )
+    #内核
+	kern=$( uname -r )  
+    #IP
+	IP=$(ip addr | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | egrep -v "^192\.168|^172\.1[6-9]\.|^172\.2[0-9]\.|^172\.3[0-2]\.|^10\.|^127\.|^255\.|^0\." | head -n 1)
+     if [[ "$IP" = "" ]]; then
+    IP=$(wget -qO- -Nolp -T2 ipv4.icanhazip.com)
+     fi
+    #地理位置
+	IPaddr=$(curl -s myip.ipip.net | awk -F '：' '{print $3}')
+	if [ "$IP" == "" ]; then
+		IP=$(curl -s ip.cn | awk -F ' ' '{print $2}' | awk -F '：' '{print $2}')
+		IPaddr=$(curl -s ip.cn | awk -F '：' '{print $3}')	
+	fi
+}
+
+
+# 关闭selunux
+function disable_selinux(){
+if [ -s /etc/selinux/config ] && grep 'SELINUX=enforcing' /etc/selinux/config; then
+    sed -i 's/SELINUX=enforcing/SELINUX=disabled/g' /etc/selinux/config
+    setenforce 0
+fi
+}
+
+#查看pid
+check_pid(){
+	PID=`ps -ef |grep -v grep | grep nginx |awk '{print $2}'`
+}
+
+
+#安装后准备工作
+function Finishing(){
+    #设置软连接
+    ln -s /home/lhteth/nginx/sbin/nginx /usr/bin >& /dev/null
+    ln -s $pwd/wubbaR /usr/bin >& /dev/null
+    #创建配置文件
+    mkdir $FOLDER/wub && touch config.txt
+    clear
+}
+
+
 
 # 安装
 function install_wubba(){
-    checkos
-    rootness
+
+    testLinuxPortUsage
     disable_selinux
-    if [[ -e ${config_nginx_file} ]]; then
+    if [[ -e ${nginxConfigPath} ]]; then
     #安装前卸载
-    uninstall_wubba
+    removeNginx
     exit 0
     fi
-    pre_install
-    install_app
-    download_files
-    install_pool
-    echo "正在清理 。"
-	if [ "$os" == 'centos' ]; then
-        firewall_set > /dev/null 2>&1
+    Install_nginx
+    Finishing
+    config_pool_set
+    config_wubba
+    view_pool_config
+    nginx -v
+    if [ $? -eq 0 ]; then
+    bold "恭喜你，wubbaPool安装完成！"
+    Service_nginx 
+    start
+    else
+        echo "wubbaPool安装失败!"
+        removeNginx
+        exit 1
     fi
-
     install_cleanup
-    start	 
-    echo -e  " 如果开启失败请手动输入  ${Green_font_prefix}nginx${Font_color_suffix}    开启服务器  如果有问题 请关闭再次开启     "
-    exit
 }
 
 
 
 # 显示 菜单状态
 menu_status(){
-	if [[ -e ${config_nginx_file} ]]; then
+	if [[ -e ${nginxConfigPath} ]]; then
 		check_pid
 		if [[ ! -z "${PID}" ]]; then
 			echo -e " 当前状态: ${Green_font_prefix}已安装${Font_color_suffix} 并 ${Green_font_prefix}已启动${Font_color_suffix}"
@@ -830,95 +1170,71 @@ menu_status(){
 	fi
 }
 
-check_sys(){
-	if [[ -f /etc/redhat-release ]]; then
-		release="centos"
-	elif cat /etc/issue | grep -q -E -i "debian"; then
-		release="debian"
-	elif cat /etc/issue | grep -q -E -i "ubuntu"; then
-		release="ubuntu"
-	elif cat /etc/issue | grep -q -E -i "centos|red hat|redhat"; then
-		release="centos"
-	elif cat /proc/version | grep -q -E -i "debian"; then
-		release="debian"
-	elif cat /proc/version | grep -q -E -i "ubuntu"; then
-		release="ubuntu"
-	elif cat /proc/version | grep -q -E -i "centos|red hat|redhat"; then
-		release="centos"
-    fi
-	bit=`uname -m`
-}
-check_sys
-[[ ${release} != "debian" ]] && [[ ${release} != "ubuntu" ]] && [[ ${release} != "centos" ]] && echo -e "${Error} 本脚本不支持当前系统 ${release} !" && exit 1
-echo -e "  wubbrR 一键管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
-    ---- wubbaR | 矿池代理 ----
 
-  ${Green_font_prefix}1.${Font_color_suffix} 安装 代理矿池
-  ${Green_font_prefix}2.${Font_color_suffix} 更新 代理矿池
-  ${Green_font_prefix}3.${Font_color_suffix} 卸载 代理矿池
-————————————
-  ${Green_font_prefix}4.${Font_color_suffix} 查看 代理矿池信息
-  ${Green_font_prefix}5.${Font_color_suffix} 修改 初始化配置文件
-————————————
- ${Green_font_prefix}8.${Font_color_suffix}  启动 pool
- ${Green_font_prefix}9.${Font_color_suffix}  停止 pool
- ${Green_font_prefix}10.${Font_color_suffix} 重启 pool
- ${Green_font_prefix}11.${Font_color_suffix} 查看 矿池日志（未实现）
-————————————
- ${Green_font_prefix}12.${Font_color_suffix} 其他功能
- ${Green_font_prefix}13.${Font_color_suffix} web控制台（未实现）
- ${Green_font_prefix}13.${Font_color_suffix} 升级脚本（未实现）
- "
-menu_status
-ln -s /home/lhteth/nginx/sbin/nginx /usr/bin &>/dev/null
-echo && read -e -p "请输入数字 [1-15]：" num
-case "$num" in
-	1)
-	install_wubba
-	;;
-	2)
-	upgradeScript
-	;;
-	3)
-	uninstall_wubba
-	;;
-	4)
-	view_pool_config
-	;;
-    5)
-	config_edit
-	;;
-	6)
-	xxx
-	;;
-	7)
-	xxx
-	;;
-	8)
-    start
-	;;
-	9)
-    stop
-	;;
-	10)
-	restart
-	;;
-	11)
-	xxx
-	;;
-	12)
-	xxx
-	;;
-	13)
-	View_Log
-	;;
-	14)
-	Other_functions
-	;;
-	15)
-	Update_Shell
-	;;
-	*)
-	echo -e "${Error} 请输入正确的数字 [1-13]"
-	;;
-esac
+function start_menu(){
+
+clear
+     check_root
+    getLinuxOSRelease
+    installSoftDownload
+[[ ${osRelease} != "debian" ]] && [[ ${osRelease} != "ubuntu" ]] && [[ ${osRelease} != "centos" ]] && echo -e "${Error} 本脚本不支持当前系统 ${osRelease} !" && exit 1
+
+echo -e "\033[34m================================================================\033[0m
+         \033[31m     欢迎使用矿池代理一键脚本                                     \033[0m
+         \033[31m     wubba：https://t.me/joinchat/K7ES0xMvjK02YzE1，             \033[0m
+         \033[31m     非公网本地搭建 ip地址手动改成内网地址                         \033[0m
+         \033[31m     vps上的端口也需要打开，不然没网                               \033[0m
+         \033[31m     即将开始搭建... 建议centos6.8 x64                            \033[0m
+         \033[34m================================================================ \033[0m";
+         echo -e "  wubbrR 一键管理脚本 ${Red_font_prefix}[v${sh_ver}]${Font_color_suffix}
+    ---- wubbaR | 矿池代理 ----" 
+    green " 1. 安装"
+    echo
+    green " 2. 卸载"
+    green " 3. 重置"
+    green " 4. 查看"
+    echo
+    green " 5. 启动"
+    green " 6. 停止"
+    echo
+    green " 7. 设置时区为北京时间"
+    green " 8. 升级脚本"
+    green " 0. 退出脚本"
+    menu_status
+    echo
+    read -p "请输入数字:" menuNumberInput
+    case "$menuNumberInput" in
+        1 )
+            install_wubba
+        ;;
+        2 )
+            removeNginx
+        ;;
+        3 )
+            config_edit
+        ;;
+        4 )
+            view_pool_config
+        ;;
+        5 )
+            start
+        ;;
+        6 )
+            stop
+        ;;
+        7 )
+            setLinuxDateZone
+        ;;
+        0 )
+            exit 1
+        ;;
+        * )
+            clear
+            red "请输入正确数字 !"
+            sleep 2s
+            start_menu
+        ;;
+    esac
+}
+
+start_menu
