@@ -611,6 +611,15 @@ function installPackage(){
     fi
 }
 
+function centos6_yuminstall(){
+
+        mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.backup
+        wget -O /etc/yum.repos.d/CentOS-Base.repo http://mirrors.cloud.tencent.com/repo/centos6_base.repo    
+        sed -i 's#http#https#g' /etc/yum.repos.d/CentOS-Base.repo
+        yum clean all
+        yum makecache
+
+}
 
 #控制
 start() {
@@ -1199,6 +1208,7 @@ echo -e "\033[34m===============================================================
     echo
     green " 7. 设置时区为北京时间"
     green " 8. 升级脚本"
+    green " 9. centos6.x换源"
     green " 0. 退出脚本"
     menu_status
     echo
@@ -1224,6 +1234,12 @@ echo -e "\033[34m===============================================================
         ;;
         7 )
             setLinuxDateZone
+        ;;
+        8 )
+            upgradeScript
+        ;;
+        9 )
+            centos6_yuminstall
         ;;
         0 )
             exit 1
