@@ -13,7 +13,7 @@ If you find any issues with the pool software please feel free to issue a pull r
 
 # Setup guide
 
-System Required:  CentOS 6,7, Debian, Ubuntu
+System Required:  CentOS 6,7,8 Debian, Ubuntu
 
  ## 用法1
 ssh login:
