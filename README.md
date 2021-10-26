@@ -20,7 +20,7 @@ ssh login:
 
 ssh登入vps执行:
 ```
-wget --no-check-certificate -O wubbaR https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
+wget --no-check-certificate -O wubbaR https://cdn.staticaly.com/gh/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
 ```
 ---------------------------------------------------------------
 ## 用法2 
