@@ -14,18 +14,19 @@ ssh login:
 wget --no-check-certificate -O wubbaR https://ghproxy.com/https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
 ```
 ---------------------------------------------------------------
+```
 git clone https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server.git
 cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 chmod 777 wubbaR
 ./wubbaR
 ```
 
-### Check it && configuration file
 ```
-nginx -t
-vim /home/lhteth/nginx/conf/nginx.conf
+*Check it
+ nginx -t
+*configuration file
+ vim /home/lhteth/nginx/conf/nginx.conf
 ```
-### init
 
 ## Performance (stock settings)
 
