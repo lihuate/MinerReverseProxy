@@ -1,9 +1,9 @@
 # Introduction
-A mine pool network agent script, based on Linux，nginx，shell.
+Nginx Miner Reverse Proxy
 
-Support multi pool address, SSL, TLS, multi port, etc.
+Support multi pool address,TLS
 
-Support ETH, BTC, RVN, GRIN, BEAM, CFX, ZIL, ERGO, AE, SERO..
+
 
 # Setup guide
 
