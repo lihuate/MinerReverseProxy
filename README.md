@@ -79,9 +79,10 @@ kill -USR2 PID / kill -USR2 `cat /home/lhteth/nginx/logs/nginx.pid`
 
 # After installation
 
+```
 ## Nbmner
 
-```
+
 nbminer -a ethash -o stratum+ssl://43.132.2xx.2xx:2020  -o1 stratum+ssl://101.132.2xx.2xx:2023 -u WALLET_ADDRESS.WORKER_NAME -log
 
 
@@ -116,8 +117,4 @@ PhoenixMiner.exe -pool ssl://e43.132.2xx.2xx:2020 -pool2 ssl://201.132.2xx.2xx:2
 t-rex.exe -a ethash -o stratum+ssl://e43.132.2xx.2xx:2020 -o stratum+ssl://201.132.2xx.2xx:2023 -u WALLET_ADDRESS -p x -w WORKER_NAME
 ```
 
-
-说明：
-出于学习。
-
-bug提交群():https://jq.qq.com/?_wv=1027&k=wgQnoL7S 
+Bug summary():https://jq.qq.com/?_wv=1027&k=wgQnoL7S 
