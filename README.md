@@ -15,7 +15,7 @@ wget --no-check-certificate -O wubbaR https://ghproxy.com/https://raw.githubuser
 ```
 ---------------------------------------------------------------
 ```
-git clone https://github.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server.git
+git clone https://github.com/lihuate/MinerReverseProxy.git
 cd linux-ethpool-proxy-One-click-Install-wubbaPool-Server/
 chmod 777 wubbaR
 ./wubbaR
