@@ -277,9 +277,11 @@ function setLinuxDateZone(){
 }
 
 
-
-
-
+function cro_nginx_user(){
+echo    "创建Nginx运行用户"
+groupadd www
+useradd -g www www -s /sbin/nologin
+}
 
 function Install_nginx(){
 	if [[ -e ${nginxConfigPath} ]]; then
@@ -293,6 +295,7 @@ function Install_nginx(){
 		green " nginx 未安装，开始安装..."
 	fi
 
+    cro_nginx_user
     # 下载nginx文件
     if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
         echo "下载nginx文件失败！"
@@ -307,7 +310,7 @@ function Install_nginx(){
 		green " 解压..."
 		tar -xzf ${pwd}/nginx-1.21.3.tar.gz && cd ${pwd}/nginx-1.21.3
 		green " 编译安装..."
-		./configure --prefix=/home/lhteth/nginx --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module && make -j$Nolp && make install
+		./configure --prefix=/home/lhteth/nginx --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module && make -j2 && make install
         
 
 
@@ -1001,6 +1004,7 @@ function removeNginx(){
 
          ssnginx=`find / -name nginx`
          rm -rf $ssnginx
+         ls | grep -P "nginx" | xargs -d"\n" rm -rf
         green " ================================================== "
         green "[ wubbaPool 卸载成功! ]"
     else
