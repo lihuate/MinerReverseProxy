@@ -520,7 +520,7 @@ EOF
 #服务
 function Service_nginx(){
 	if [[ ${release} = "centos" ]]; then
-		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/nginx_centos -O /etc/init.d/xnd; then
+		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_centos -O /etc/init.d/xnd; then
 		#	red " nginx服务 管理脚本下载失败 !" && exit 1
 		#fi
         service_nginx_centos
@@ -528,7 +528,7 @@ function Service_nginx(){
 		chkconfig --add xnd
 		chkconfig xnd on
 	else
-		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/nginx_debian -O /etc/init.d/xnd; then
+		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_debian -O /etc/init.d/xnd; then
 			#red " nginx服务 管理脚本下载失败 !" && exit 1
 		#fi
         service_nginx_debian
@@ -547,7 +547,7 @@ function Service_nginx(){
 
 # 更新本脚本
 function upgradeScript(){
-    wget -Nq --no-check-certificate -O ./wubbaR "https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR"
+    wget -Nq --no-check-certificate -O ./wubbaR "https://raw.githubusercontent.com/lihuate/MinerReverseProxy/main/wubbaR"
     green " [本脚本升级成功! ]"
     chmod +x ./wubbaR
     sleep 2s
