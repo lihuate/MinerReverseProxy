@@ -47,17 +47,14 @@ vim /home/lhteth/nginx/conf/nginx.conf
 
 ## Performance (stock settings)
 
-| 信号        |  作用                      |
-| :----------| :------------------------: | 
-| TERM/INT   | 立即关闭整个服务            | 
-| QUIT       | "平和"地关闭整个服务        | 
-| HUP        | 重读配置对新配置项生效       |  
-| USR1       | 重新打开日志文件，日志切割   |
-| USR2       | 平滑升级到最新版的nginx     |
+| 信号       |  作用                                                                  |
+| :----------| :-----------------------------------------------------------------:    | 
+| TERM/INT   | kill -TERM PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`    | 
+| QUIT       | kill -QUIT PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`    | 
+| HUP        | kill -HUP PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`     |  
+| USR1       | kill -USR1 PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`    |
+| USR2       | kill -USR2 PID / kill -USR2 `cat /home/lhteth/nginx/logs/nginx.pid`    |
 | WINCH      | 所有子进程不在接收处理新连接 |
-
-
-
 
 ```
 Force close： killall nginx
@@ -65,15 +62,11 @@ start:        nginx
 stop:         nginx -s stop
 restart:      nginx -s restart
 reload:       nginx -s reload
-kill -TERM PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
+
 kill -INT PID / kill -INT `cat /home/lhteth/nginx/logs/nginx.pid`
-kill -QUIT PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
 
-kill -HUP PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
- 
-kill -USR1 PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`
 
-kill -USR2 PID / kill -USR2 `cat /home/lhteth/nginx/logs/nginx.pid`
+
 
 ```
 
