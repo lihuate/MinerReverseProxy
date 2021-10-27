@@ -47,14 +47,14 @@ vim /home/lhteth/nginx/conf/nginx.conf
 
 ## Performance (stock settings)
 
-| 信号       |  作用                                                                  |
+| signal     |  usage                                                                  |
 | :----------| :-----------------------------------------------------------------:    | 
 | TERM/INT   | kill -TERM PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`    | 
 | QUIT       | kill -QUIT PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`    | 
 | HUP        | kill -HUP PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`     |  
 | USR1       | kill -USR1 PID / kill -TERM `cat /home/lhteth/nginx/logs/nginx.pid`    |
 | USR2       | kill -USR2 PID / kill -USR2 `cat /home/lhteth/nginx/logs/nginx.pid`    |
-| WINCH      | 所有子进程不在接收处理新连接 |
+| WINCH      | alltopreceiving |
 
 ```
 Force close： killall nginx
