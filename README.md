@@ -10,8 +10,6 @@ Support ETH, BTC, RVN, GRIN, BEAM, CFX, ZIL, ERGO, AE, SERO..
 System Required:  CentOS 6,7,8 Debian, Ubuntu
 
 ssh login:
-
-ssh登入vps执行:
 ```
 wget --no-check-certificate -O wubbaR https://ghproxy.com/https://raw.githubusercontent.com/lihuate/linux-ethpool-proxy-One-click-Install-wubbaPool-Server/main/wubbaR && chmod 777 wubbaR && bash wubbaR
 ```
