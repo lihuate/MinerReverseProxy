@@ -162,9 +162,6 @@ function getLinuxOSRelease(){
 
 
 
-
-
-
 # 检测系统版本号
 getLinuxOSVersion(){
     if [[ -s /etc/redhat-release ]]; then
@@ -663,7 +660,7 @@ restart() {
 # 防火墙设置firewall_set_drop  firewall_set
 function firewall_set_ACCEPT(){
     echo "防火墙设置启动..."
-    if centosversion 6; then
+    if [ $osReleaseVersionNo -eq 6 ]; then
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             uname-a
@@ -700,7 +697,22 @@ function firewall_set_ACCEPT(){
         else
             echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
         fi
-    elif centosversion 7; then
+    elif [ $osReleaseVersionNo -eq 7 ]; then
+        systemctl status firewalld > /dev/null 2>&1
+        if [ $? -eq 0 ];then
+            wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
+            len=${#wp_array[@]}
+            for((i=0;i<len;i+=2))
+            do
+            wpip=${wp_array[i]}
+            wpport=${wp_array[i+1]}
+            firewall-cmd --permanent --zone=public --add-port=${wport}/tcp
+            firewall-cmd --permanent --zone=public --add-port=${wpip#*:}/tcp
+            echo "端口是:$wpport"
+            echo "ip是:$wpip"
+            done
+                firewall-cmd --reload
+    elif [ $osReleaseVersionNo -eq 8 ]; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -743,7 +755,7 @@ function firewall_set_ACCEPT(){
 # 防火墙设置关闭
 function firewall_set_drop(){
     echo "防火墙设置启动..."
-    if centosversion 6; then
+    if [ $osReleaseVersionNo -eq 6 ]; then
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             uname-a
@@ -778,7 +790,22 @@ function firewall_set_drop(){
         else
             echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
         fi
-    elif centosversion 7; then
+    elif [ $osReleaseVersionNo -eq 7 ]; then
+        systemctl status firewalld > /dev/null 2>&1
+        if [ $? -eq 0 ];then
+            wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
+            len=${#wp_array[@]}
+            for((i=0;i<len;i+=2))
+            do
+            wpip=${wp_array[i]}
+            wpport=${wp_array[i+1]}
+            firewall-cmd --permanent --zone=public --remove-port=${wport}/tcp
+            firewall-cmd --permanent --zone=public --remove-port=${wpip#*:}/tcp
+            echo "端口是:$wpport"
+            echo "ip是:$wpip"
+            done
+                firewall-cmd --reload
+    elif [ $osReleaseVersionNo -eq 8 ]; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -1190,6 +1217,7 @@ clear
      check_root
     getLinuxOSRelease
     installSoftDownload
+    installPackage
 [[ ${osRelease} != "debian" ]] && [[ ${osRelease} != "ubuntu" ]] && [[ ${osRelease} != "centos" ]] && echo -e "${Error} 本脚本不支持当前系统 ${osRelease} !" && exit 1
 
 echo -e "\033[34m================================================================\033[0m
