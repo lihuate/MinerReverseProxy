@@ -712,6 +712,7 @@ function firewall_set_ACCEPT(){
             echo "ip是:$wpip"
             done
                 firewall-cmd --reload
+        fi
     elif [ $osReleaseVersionNo -eq 8 ]; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
@@ -805,6 +806,7 @@ function firewall_set_drop(){
             echo "ip是:$wpip"
             done
                 firewall-cmd --reload
+        fi        
     elif [ $osReleaseVersionNo -eq 8 ]; then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
