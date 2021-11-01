@@ -13,7 +13,7 @@ export LC_ALL=C
 #export LANG=C
 export LANG=en_US.UTF-8
 export LANGUAGE=en_US.UTF-8
-sh_ver="1.1"
+sh_ver="1.2"
 
 
 #如果小于65535设置ulimits：
@@ -100,7 +100,6 @@ function checkCPU(){
 
 	#green " Status 状态显示--当前CPU是: $osCPU"
 }
-
 
 
 
