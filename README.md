@@ -89,3 +89,9 @@ PhoenixMiner.exe -pool ssl://e43.132.2xx.2xx:2020 -pool2 ssl://201.132.2xx.2xx:2
 
 t-rex.exe -a ethash -o stratum+ssl://e43.132.2xx.2xx:2020 -o stratum+ssl://201.132.2xx.2xx:2023 -u WALLET_ADDRESS -p x -w WORKER_NAME
 ```
+
+
+### redir
+```
+wget --no-check-certificate -O wubbaR https://raw.githubusercontent.com/lihuate/MinerReverseProxy/main/redir.sh && chmod 777 redir.sh && bash redir.sh
+```
