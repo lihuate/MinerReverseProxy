@@ -1,0 +1,105 @@
+centos 8
+关闭防火墙：：
+systemctl stop firewalld.service
+systemctl disable firewalld.service
+
+安装依赖：
+ yum install gcc g++ -y
+ yum -y install automake
+ yum -y install autoconf
+
+安装redir:
+wget https://github.com/troglobit/redir/releases/download/v3.3/redir-3.3.tar.xz
+tar -xvf redir-3.3.tar.xz
+cd redir-3.3
+./configure --prefix=/usr
+make
+make install
+
+查矿池IP：http://ip.tool.chinaz.com/eth-kr.flexpool.io （有多个就随便选一个）
+
+用法例：sudo redir -I flexpool :22333 13.209.102.128:5555   （把13.209.102.128:5555转发到22333）
+
+关闭：ps -aux | grep redir | awk '{print $2}' | xargs kill
+
+矿机配置：nbminer -a ethash  -o stratum+ssl://ip:22333 -o2 stratum+ssl://eth-de.flexpool.io:5555 -u 0x8c.default
+————————————————————————————————————————————————
+
+
+
+精进：
+
+防火墙：
+查看状态
+
+systemctl status firewalld.service
+
+打开防火墙
+
+systemctl start firewalld.service
+
+关闭防火墙
+
+systemctl stop firewalld.service
+
+开启防火墙
+
+systemctl enable firewalld.service
+
+禁用防火墙
+
+systemctl disable firewalld.service
+————————————————
+
+端口：
+
+查看防火墙某个端口是否开放
+firewall-cmd --query-port=22333/tcp
+开放防火墙端口22333
+firewall-cmd --zone=public --add-port=22333/tcp --permanent
+注意：开放端口后要重启防火墙生效
+重启防火墙
+systemctl restart firewalld
+关闭防火墙端口
+firewall-cmd --remove-port=22333/tcp --permanent
+查看防火墙状态
+systemctl status firewalld
+关闭防火墙
+systemctl stop firewalld
+打开防火墙
+systemctl start firewalld
+开放一段端口
+firewall-cmd --zone=public --add-port=40000-45000/tcp --permanent
+查看开放的端口列表
+firewall-cmd --zone=public --list-ports
+查看被监听(Listen)的端口
+netstat -lntp
+检查端口被哪个进程占用
+netstat -lnp|grep 22333
+————————————————
+
+
+测矿池延迟：
+wget https://github.com/2miners/stratum-ping/releases/download/v1.0.0/stratum-ping-linux-x64.tar.gz
+tar -zxvf stratum-ping-linux-x64.tar.gz
+./stratum-ping -tls -c 100 eth-kr.flexpool.io:5555
+
+
+守护进程与开机自启：
+
+
+参考：
+https://github.com/2miners/stratum-ping/releases/tag/v1.0.0
+https://segmentfault.com/a/1190000019179728
+https://github.com/troglobit/redir
+
+检查bbr，开启bbr
+wget -N --no-check-certificate "https://raw.githubusercontent.com/chiakge/Linux-NetSpeed/master/tcp.sh"
+chmod +x tcp.sh
+./tcp.sh 
+
+安装bbr
+wget --no-check-certificate https://raw.githubusercontent.com/jinwyp/one_click_script/master/install_kernel.sh && chmod +x ./install_kernel.sh && ./install_kernel.sh
+
+
+
