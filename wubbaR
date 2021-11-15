@@ -1159,7 +1159,9 @@ check_pid(){
 function Finishing(){
     #设置软连接
     ln -s /home/lhteth/nginx/sbin/nginx /usr/bin >& /dev/null
+    ln -s /home/lhteth/nginx/sbin/nginx /usr/sbin >& /dev/null
     ln -s $pwd/wubbaR /usr/bin >& /dev/null
+    ln -s $pwd/wubbaR /usr/sbin >& /dev/null
     #创建配置文件
     mkdir $FOLDER/wub && touch config.txt
     clear
