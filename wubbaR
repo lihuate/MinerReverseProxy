@@ -413,6 +413,13 @@ case "\$1" in
 esac
 exit \$RETVAL
 EOF
+
+
+#centos8自启
+ [ $osReleaseVersionNo -eq 8 ]; then
+ cat > /etc/rc.d/rc.local<<-EOF
+/home/nginx/sbin/nginx
+EOF
 }
 
 
