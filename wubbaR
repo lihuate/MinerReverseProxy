@@ -418,7 +418,7 @@ EOF
 #centos8自启
 if [ $osReleaseVersionNo -eq 8 ]; then
  cat > /etc/rc.d/rc.local<<-EOF
-/home/nginx/sbin/nginx
+/home/lhteth/nginx/sbin/nginx
 EOF
 else
 echo "开机自启设置失败！"
