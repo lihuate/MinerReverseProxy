@@ -605,6 +605,8 @@ function installPackage(){
         # https://joshtronic.com/2018/12/17/how-to-install-the-latest-nginx-on-debian-and-ubuntu/
         # https://www.nginx.com/resources/wiki/start/topics/tutorials/install/   
 
+        echo "error"> a.txt
+	echo "a=============================================================================================================================a"
         $osSystemPackage install -y gnupg2
         $osSystemPackage install -y wget
 	$osSystemPackage install -y build-essential
