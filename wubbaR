@@ -609,10 +609,14 @@ function installPackage(){
 	echo "a=============================================================================================================================a"
         $osSystemPackage install -y gnupg2
         $osSystemPackage install -y wget
+	echo "a=============================================================================================================================a"
 	$osSystemPackage install -y build-essential
+	echo "a=============================================================================================================================a"
         $osSystemPackage install -y curl
         $osSystemPackage install -y curl-devel
+	echo "a=============================================================================================================================a"
         $osSystemPackage install -y libpcre3 libpcre3-dev
+	echo "a=============================================================================================================================a"
         $osSystemPackage install -y zlib1g zlib1g-dev
         $osSystemPackage install -y openssl libssl-dev
 
