@@ -292,6 +292,11 @@ function Install_nginx(){
 	fi
 
     cro_nginx_user
+    
+    if [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then
+    osSysudo apt install build-essential -y
+    fi
+    
     # 下载nginx文件
     if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
         echo "下载nginx文件失败！"
@@ -609,9 +614,9 @@ function installPackage(){
 	echo "a=============================================================================================================================a"
         $osSystemPackage install -y gnupg2
         $osSystemPackage install -y wget
-	echo "a=============================================================================================================================a"
+	echo "a========================sssssssssssss=====================================================================================================a"
 	$osSystemPackage install -y build-essential
-	echo "a=============================================================================================================================a"
+	echo "a========================ssssssssssssss=====================================================================================================a"
         $osSystemPackage install -y curl
         $osSystemPackage install -y curl-devel
 	echo "a=============================================================================================================================a"
