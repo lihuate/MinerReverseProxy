@@ -610,7 +610,7 @@ function installPackage(){
         $osSystemPackage install -y gcc
         $osSystemPackage install -y curl
         $osSystemPackage install -y curl-devel
-        $osSystemPackage install -y ibpcre3 libpcre3-dev
+        $osSystemPackage install -y libpcre3 libpcre3-dev
         $osSystemPackage install -y zlib1g zlib1g-dev
         $osSystemPackage install -y openssl libssl-dev
         $osSystemPackage install -y build-essential
