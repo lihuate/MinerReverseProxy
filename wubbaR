@@ -16,6 +16,12 @@ export LANGUAGE=en_US.UTF-8
 sh_ver="1.2"
 
 
+if [[ $(/usr/bin/id -u) -ne 0 ]]; then
+  sudoCmd="sudo"
+else
+  sudoCmd=""
+fi
+
 #如果小于65535设置ulimits：
     ulio=`ulimit -n`
     if [ $ulio -lt 65535 ]; then
@@ -53,19 +59,31 @@ osSystemMdPath=""
 osSystemShell="bash"
 
 pwd=`pwd`
-wpt=2020
+wpt=22335
 nolp=
 bd=
+nghm="/home/nginx"
 #配置文件辞职
-nginxConfigPath="/home/lhteth/nginx/conf/nginx.conf"
+nginxConfigPath="$nghm/conf/nginx.conf"
 
-FOLDER="/home/lhteth/nginx/"
+FOLDER="$nghm/"
 
-BIN="/home/lhteth/nginx/sbin/nginx"
+BIN="$nghm/sbin/nginx"
 
+#安装初始
+init_config=1
 
 nginxAccessLogFilePath="${FOLDER}/logs/access.log"
 nginxErrorLogFilePath="${FOLDER}/logs/error.log"
+
+#服务
+FIND_RCSERVER="/lib/systemd/system/rc-local.service"
+FIND_RCLOCAL="/etc/rc.local"
+FIND_STR="[Install]"
+FIND_STR2="/etc/init.d/xnd"
+str_RCLOCAL="sh $FIND_RCLOCAL/xnd start &"
+
+
 
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
@@ -217,11 +235,24 @@ osSELINUXCheckIsRebootInput=""
 function testLinuxPortUsage(){
 
     if [ "$osRelease" == "centos" ]; then
+        if  [[ ${osReleaseVersionNoShort} == "5" ]]; then
+            green " =================================================="
+            red " 本脚本不支持 Centos 5 或 Centos 5 更早的版本"
+            green " =================================================="
+            exit
+        fi
 
         red " 关闭防火墙 firewalld"
         ${sudoCmd} systemctl stop firewalld
         ${sudoCmd} systemctl disable firewalld
 
+    elif [ "$osRelease" == "ubuntu" ]; then
+        if  [[ ${osReleaseVersionNoShort} == "12" ]]; then
+            green " =================================================="
+            red " 本脚本不支持 Ubuntu 12 或 Ubuntu 12 更早的版本"
+            green " =================================================="
+            exit
+        fi
 
         red " 关闭防火墙 ufw"
         ${sudoCmd} systemctl stop ufw
@@ -234,7 +265,46 @@ function testLinuxPortUsage(){
 }
 
 
+# 修改SSH 端口号
+function changeLinuxSSHPort(){
+    green " 修改的SSH登陆的端口号, 不要使用常用的端口号. 例如 20|21|23|25|53|69|80|110|443|123!"
+    read -p "请输入要修改的端口号(必须是纯数字并且在1024~65535之间或22):" osSSHLoginPortInput
+    osSSHLoginPortInput=${osSSHLoginPortInput:-0}
 
+    if [ $osSSHLoginPortInput -eq 22 -o $osSSHLoginPortInput -gt 1024 -a $osSSHLoginPortInput -lt 65535 ]; then
+        sed -i "s/#\?Port [0-9]*/Port $osSSHLoginPortInput/g" /etc/ssh/sshd_config
+
+        if [ "$osRelease" == "centos" ] ; then
+
+            if  [[ ${osReleaseVersionNoShort} == "7" ]]; then
+                yum -y install policycoreutils-python
+            elif  [[ ${osReleaseVersionNoShort} == "8" ]]; then
+                yum -y install policycoreutils-python-utils
+            fi
+
+            # semanage port -l
+            semanage port -a -t ssh_port_t -p tcp $osSSHLoginPortInput
+            firewall-cmd --permanent --zone=public --add-port=$osSSHLoginPortInput/tcp 
+            firewall-cmd --reload
+    
+            ${sudoCmd} systemctl restart sshd.service
+
+        fi
+
+        if [ "$osRelease" == "ubuntu" ] || [ "$osRelease" == "debian" ] ; then
+            semanage port -a -t ssh_port_t -p tcp $osSSHLoginPortInput
+            sudo ufw allow $osSSHLoginPortInput/tcp
+
+            ${sudoCmd} service ssh restart
+            ${sudoCmd} systemctl restart ssh
+        fi
+
+        green "设置成功, 请记住设置的端口号 ${osSSHLoginPortInput}!"
+        green "登陆服务器命令: ssh -p ${osSSHLoginPortInput} root@111.111.111.your ip !"
+    else
+        echo "输入的端口号错误! 范围: 22,1025~65534"
+    fi
+}
 
 
 
@@ -311,7 +381,9 @@ function Install_nginx(){
 		green " 解压..."
 		tar -xzf ${pwd}/nginx-1.21.3.tar.gz && cd ${pwd}/nginx-1.21.3
 		green " 编译安装..."
-		./configure --prefix=/home/lhteth/nginx --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module && make -j2 && make install
+		./configure --prefix=$nghm --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module
+        make -j2 
+        make install
         
 
 
@@ -347,8 +419,8 @@ function service_nginx_centos(){
 
 NAME="nginx"
 NAME_BIN="nginx"
-FOLDER="/home/lhteth/nginx"
-BIN="/home/lhteth/nginx/sbin/nginx"
+FOLDER="$nghm"
+BIN="$nghm/sbin/nginx"
 
 check_running(){
 	PID=`PID=\`ps -ef |grep -v grep | grep nginx |awk '{print \$2}'\`
@@ -419,15 +491,6 @@ esac
 exit \$RETVAL
 EOF
 
-
-#centos8自启
-if [ $osReleaseVersionNo -eq 8 ]; then
- cat > /etc/rc.d/rc.local<<-EOF
-/home/lhteth/nginx/sbin/nginx
-EOF
-else
-echo "开机自启设置失败！"
-fi
 }
 
 
@@ -446,8 +509,8 @@ function service_nginx_debian(){
 
 NAME="nginx"
 NAME_BIN="nginx"
-FOLDER="/home/lhteth/nginx/"
-BIN="/home/lhteth/nginx/sbin/nginx"
+FOLDER="$nghm/"
+BIN="$nghm/sbin/nginx"
 
 
 check_running(){
@@ -531,6 +594,14 @@ EOF
 #服务
 function Service_nginx(){
 	if [[ ${release} = "centos" ]]; then
+    #centos8自启
+    if [ $osReleaseVersionNo -eq 8 ]; then
+    cat > /etc/rc.d/rc.local<<-EOF
+$nghm/sbin/nginx
+EOF
+    else
+    echo "开机自启设置失败！"
+fi
 		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_centos -O /etc/init.d/xnd; then
 		#	red " nginx服务 管理脚本下载失败 !" && exit 1
 		#fi
@@ -538,15 +609,47 @@ function Service_nginx(){
 		chmod +x /etc/init.d/xnd
 		chkconfig --add xnd
 		chkconfig xnd on
-	else
+fi
+if [ "$osRelease" == "ubuntu" ]; then
 		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_debian -O /etc/init.d/xnd; then
 			#red " nginx服务 管理脚本下载失败 !" && exit 1
 		#fi
         service_nginx_debian
 		chmod +x /etc/init.d/xnd
 		update-rc.d -f xnd defaults
-	fi
-	green " nginx 管理脚本下载完成 !"
+
+# -f 参数判断 $file 是否存在
+if [ ! -f "$FIND_RCSERVER" ]; then
+  touch $FIND_RCSERVER 
+fi
+# 判断匹配函数，匹配函数不为0，则包含给定字符
+if [ `grep -c "$FIND_STR" $FIND_RCSERVER` -ne '0' ];then
+    echo "The File Has  [Install]!"
+    else
+    echo "
+[Install]
+WantedBy=multi-user.target
+Alias=rc-local.service ">>/lib/systemd/system/rc-local.service
+
+sudo chmod 777 /lib/systemd/system/rc-local.service
+fi
+
+
+# -f 参数判断 $file 是否存在
+if [ ! -f "$FIND_RCLOCAL" ]; then
+  touch $FIND_RCLOCAL
+  echo "#!/bin/bash">>$FIND_RCLOCAL
+fi
+
+# 判断匹配函数，匹配函数不为0，则包含给定字符
+if [ `grep -c "$FIND_STR2" $$FIND_RCLOCAL` -ne '0' ];then
+    echo "The File Has  [init.d]!"
+    else
+echo "$str_RCLOCAL">>$FIND_RCLOCAL
+fi
+ln -s /lib/systemd/system/rc.local.service /etc/systemd/system/
+fi
+	green " nginx 管理脚本完成 !"
 }
 
 
@@ -570,8 +673,6 @@ function upgradeScript(){
 # 软件安装
 
 function installSoftDownload(){
-
-
 	if [[ "${osRelease}" == "debian" || "${osRelease}" == "ubuntu" ]]; then
 		if ! dpkg -l | grep -qw wget; then
 			${osSystemPackage} -y install wget git unzip
@@ -581,7 +682,6 @@ function installSoftDownload(){
 
 		if ! dpkg -l | grep -qw curl; then
 			${osSystemPackage} -y install curl git unzip
-			
 		fi
 
 	elif [[ "${osRelease}" == "centos" ]]; then
@@ -603,8 +703,11 @@ function installPackage(){
 
     if [ "$osRelease" == "centos" ]; then
 
-        ${osSystemPackage} update -y
-        ${osSystemPackage} install -y gcc curl curl-devel zlib zlib-devel pcre pcre-devel openssl openssl-devel
+        ${osSystemPackage} update  -y
+        ${osSystemPackage} install -y gcc curl curl-devel
+        ${osSystemPackage} install -y openssl openssl-devel
+        ${osSystemPackage} install -y zlib zlib-devel pcre pcre-devel
+
 
     elif [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then      
         # https://joshtronic.com/2018/12/17/how-to-install-the-latest-nginx-on-debian-and-ubuntu/
@@ -612,7 +715,6 @@ function installPackage(){
 
         echo "error"> a.txt
 	echo "a=============================================================================================================================a"
-        $osSystemPackage install -y gnupg2
         $osSystemPackage install -y wget
 	echo "a========================sssssssssssss=====================================================================================================a"
 	$osSystemPackage install -y build-essential
@@ -645,7 +747,7 @@ function centos6_yuminstall(){
 start() {
     check_pid
 	if [[  -z "${PID}" ]]; then
-    etc/init.d/xnd start
+    /etc/init.d/xnd start
     fi
     if [ $? -eq 0 ]; then
     menu_status
@@ -680,7 +782,8 @@ restart() {
 # 防火墙设置firewall_set_drop  firewall_set
 function firewall_set_ACCEPT(){
     echo "防火墙设置启动..."
-    if [ $osReleaseVersionNo -eq 6 ]; then
+    if [ `echo ${osReleaseVersionNo} | awk -v tem="6" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
+        systemctl status firewalld > /dev/null 2>&1
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             uname-a
@@ -712,12 +815,13 @@ function firewall_set_ACCEPT(){
                       /etc/init.d/iptables save
                       /etc/init.d/iptables restart
             else
-                echo "port ${wubbaport} 设置完成."
+                echo "port ${wport} 设置完成."
             fi
         else
             echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
         fi
-    elif [ $osReleaseVersionNo -eq 7 ]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="7" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
+        systemctl status firewalld > /dev/null 2>&1
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -733,7 +837,8 @@ function firewall_set_ACCEPT(){
             done
                 firewall-cmd --reload
         fi
-    elif [ $osReleaseVersionNo -eq 8 ]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="8" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
+        systemctl status firewalld > /dev/null 2>&1
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -770,13 +875,13 @@ function firewall_set_ACCEPT(){
             fi
         fi
     fi
-    echo "防火墙设置完成..."
+    echo "防火墙设置开启..."
 }
 
 # 防火墙设置关闭
 function firewall_set_drop(){
     echo "防火墙设置启动..."
-    if [ $osReleaseVersionNo -eq 6 ]; then
+    if [ `echo ${osReleaseVersionNo} | awk -v tem="6" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             uname-a
@@ -806,12 +911,12 @@ function firewall_set_drop(){
                       /etc/init.d/iptables save
                       /etc/init.d/iptables restart
             else
-                echo "port ${wubbaport} 设置完成."
+                echo "port ${wport} 设置完成."
             fi
         else
             echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
         fi
-    elif [ $osReleaseVersionNo -eq 7 ]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="7" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -827,7 +932,8 @@ function firewall_set_drop(){
             done
                 firewall-cmd --reload
         fi        
-    elif [ $osReleaseVersionNo -eq 8 ]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="8" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
+        systemctl status firewalld > /dev/null 2>&1
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -864,7 +970,7 @@ function firewall_set_drop(){
             fi
         fi
     fi
-    echo "防火墙设置完成..."
+    echo "防火墙设置关闭..."
 }
 
 
@@ -894,7 +1000,7 @@ function view_pool_config(){
             yellow " ================================================== "
             yellow " ================================================== "
         poolnumbe=
-        wp_array=($(awk '{print}' /home/lhteth/nginx/wub/config.txt))
+        wp_array=($(awk '{print}' $nghm/wub/config.txt))
         len=${#wp_array[@]}
         for((i=0;i<len;i+=2))
         do
@@ -938,22 +1044,29 @@ function view_pool_config(){
 # 修改
 function config_edit(){
 
+    # -f 参数判断 $file 是否存在
+    if [ ! -f "$nghm/wub/isok" ]; then
+       #无配置全新安装
+       init_config=0
+       install_wubba
+       exit 0
+    fi
 	if [[ -e ${nginxConfigPath} ]]; then
-    cp /home/lhteth/nginx/wub/config.txt /home/lhteth/nginx/wub/config.txt.bak &>/dev/null
+    cp $nghm/wub/config.txt $nghm/wub/config.txt.bak &>/dev/null
     xbbainit
     firewall_set_drop
-    rm -rf /home/lhteth/nginx/wub/config.txt &>/dev/null
-    rm -rf /home/lhteth/nginx/conf/nginx.conf &>/dev/null
+    rm -rf $nghm/wub/config.txt &>/dev/null
+    rm -rf $nghm/conf/nginx.conf &>/dev/null
     rm -rf /home/wub/config.txt &>/dev/null
     config_pool_set
-    cp /home/wub/config.txt  /home/lhteth/nginx/wub/config.txt &>/dev/null
+    cp /home/wub/config.txt  $nghm/wub/config.txt &>/dev/null
     config_wubba
     rm -rf $pwd/wub
     nginx -t
     if [ $? -eq 0 ]; then
-    cp /home/lhteth/nginx/wub/config.txt /home/lhteth/nginx/wub/config.txt.bak &>/dev/null
-    touch /home/lhteth/nginx/wub/ture &>/dev/null
-    cd /home/lhteth/nginx/sbin/
+    cp $nghm/wub/config.txt $nghm/wub/config.txt.bak &>/dev/null
+    touch $nghm/wub/ture &>/dev/null
+    cd $nghm/sbin/
         killall nginx
             if [ $? -eq 0 ]; then
           echo -e " 当前状态: ${Green_font_prefix}关闭成功${Font_color_suffix} "
@@ -969,7 +1082,7 @@ function config_edit(){
           fi
     green "succeed"
 else
-    mv /home/lhteth/nginx/wub/config.txt.bak /home/lhteth/nginx/wub/config.txt
+    mv $nghm/wub/config.txt.bak $nghm/wub/config.txt
     config_wubba
     green "failed配置已恢复"
 fi
@@ -985,8 +1098,8 @@ fi
 # 配置
 function config_wubba(){
     xbbainit
-    rm -rf  /home/lhteth/nginx/conf/nginx.conf
-    touch /home/lhteth/nginx/conf/nginx.conf
+    rm -rf  $nghm/conf/nginx.conf
+    touch $nghm/conf/nginx.conf
     echo "
 worker_processes ${Nolp};
 events {
@@ -996,10 +1109,10 @@ events {
     worker_connections ${ulim};
 }
 stream {
- " >> /home/lhteth/nginx/conf/nginx.conf
+ " >> $nghm/conf/nginx.conf
 
 
-wp_array=($(awk '{print}' /home/lhteth/nginx/wub/config.txt))
+wp_array=($(awk '{print}' $nghm/wub/config.txt))
 len=${#wp_array[@]}
 for((i=0;i<len;i+=2))
 do
@@ -1015,10 +1128,10 @@ echo "
          listen ${wpport};
          proxy_connect_timeout 20s;
          proxy_pass backend${bd};
-     }" >> /home/lhteth/nginx/conf/nginx.conf
+     }" >> $nghm/conf/nginx.conf
 bd=`expr $bd + 1`;
 done
-echo "}" >> /home/lhteth/nginx/conf/nginx.conf
+echo "}" >> $nghm/conf/nginx.conf
 }
 
 
@@ -1050,10 +1163,13 @@ function removeNginx(){
         else
             update-rc.d -f xnd remove
         fi
-
+        if [ "$osRelease" == "ubuntu" ]; then
+        sed -i '/xnd/d' $FIND_RCLOCAL
+        fi
          ssnginx=`find / -name nginx`
          rm -rf $ssnginx
          ls | grep -P "nginx" | xargs -d"\n" rm -rf
+         rm -rf $nghm/wub/isok
         green " ================================================== "
         green "[ wubbaPool 卸载成功! ]"
     else
@@ -1074,16 +1190,16 @@ function config_pool_set(){
     do
     poolnumber=`expr $poolnumber + 1`;
     echo -e  "请输入\033[31m$poolnumber\033[0m号矿池代理地:"
-    read -p "(默认flexpool池韩国: eth-kr.flexpool.io:5555):" wubbaaddr
-    [ -z "$wubbaaddr" ] && wubbaaddr="eth-kr.flexpool.io:5555"
+    read -p "(默认flexpool池韩国: eth-kr.flexpool.io:5555):" wddr
+    [ -z "$wddr" ] && wddr="eth-kr.flexpool.io:5555"
 
-    expr ${wubbaaddr#*:} + 0 &>/dev/null
+    expr ${wddr#*:} + 0 &>/dev/null
     if [ $? -eq 0 ]; then
-        if [ ${wubbaaddr#*:} -ge 1 ] && [ ${wubbaaddr#*:} -le 65535 ]; then
+        if [ ${wddr#*:} -ge 1 ] && [ ${wddr#*:} -le 65535 ]; then
             echo
-            echo "$wubbaaddr" >>  $FOLDER/wub/config.txt
+            echo "$wddr" >>  $FOLDER/wub/config.txt
             echo "---------------------------"
-            echo "paddr = $wubbaaddr"
+            echo "paddr = $wddr"
             echo "---------------------------"
             echo
             break
@@ -1101,16 +1217,16 @@ done
     while true
     do
     echo -e "请输入\033[31m$poolnumber\033[0m号矿池连接端口,不设置将默认$wpt端口:"
-    read -p "(默认自动设置端口为$wpt):" wubbaport
-    [ -z "$wubbaport" ] && wubbaport="$wpt"
+    read -p "(默认自动设置端口为$wpt):" wport
+    [ -z "$wport" ] && wport="$wpt"
     
-    expr $wubbaport + 0 &>/dev/null
+    expr $wport + 0 &>/dev/null
     if [ $? -eq 0 ]; then
-        if [ $wubbaport -ge 1 ] && [ $wubbaport -le 65535 ]; then
+        if [ $wport -ge 1 ] && [ $wport -le 65535 ]; then
             echo
-            echo "$wubbaport" >> $FOLDER/wub/config.txt
+            echo "$wport" >> $FOLDER/wub/config.txt
             echo "---------------------------"
-            echo "port = $wubbaport"
+            echo "port = $wport"
             echo "---------------------------"
             echo
             wpt=`expr $wpt + 1`;
@@ -1179,8 +1295,8 @@ check_pid(){
 #安装后准备工作
 function Finishing(){
     #设置软连接
-    ln -s /home/lhteth/nginx/sbin/nginx /usr/bin >& /dev/null
-    ln -s /home/lhteth/nginx/sbin/nginx /usr/sbin >& /dev/null
+    ln -s $nghm/sbin/nginx /usr/bin >& /dev/null
+    ln -s $nghm/sbin/nginx /usr/sbin >& /dev/null
     ln -s $pwd/wubbaR /usr/bin >& /dev/null
     ln -s $pwd/wubbaR /usr/sbin >& /dev/null
     #创建配置文件
@@ -1192,7 +1308,7 @@ function Finishing(){
 
 # 安装
 function install_wubba(){
-
+    if [ $init_config -eq 1 ]; then
     testLinuxPortUsage
     disable_selinux
     if [[ -e ${nginxConfigPath} ]]; then
@@ -1200,14 +1316,17 @@ function install_wubba(){
     removeNginx
     exit 0
     fi
+
     Install_nginx
     Finishing
+    fi
     config_pool_set
     config_wubba
     view_pool_config
     nginx -v
     if [ $? -eq 0 ]; then
     bold "恭喜你，wubbaPool安装完成！"
+    echo "ok">$nghm/wub/isok
     Service_nginx 
     start
     else
@@ -1265,6 +1384,7 @@ echo -e "\033[34m===============================================================
     green " 7. 设置时区为北京时间"
     green " 8. 升级脚本"
     green " 9. centos6.x换源"
+    green " 10. 修改SSH 端口号"
     green " 0. 退出脚本"
     menu_status
     echo
@@ -1296,6 +1416,9 @@ echo -e "\033[34m===============================================================
         ;;
         9 )
             centos6_yuminstall
+        ;;
+        10)
+            changeLinuxSSHPort
         ;;
         0 )
             exit 1
