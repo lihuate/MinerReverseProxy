@@ -65,10 +65,10 @@ bd=
 nghm="/home/nginx"
 #配置文件辞职
 nginxConfigPath="$nghm/conf/nginx.conf"
-
 FOLDER="$nghm/"
-
 BIN="$nghm/sbin/nginx"
+# 查看逻辑CPU的个数
+Nolp=$(cat /proc/cpuinfo| grep "processor"| wc -l)
 
 #安装初始
 init_config=1
@@ -82,7 +82,6 @@ FIND_RCLOCAL="/etc/rc.local"
 FIND_STR="[Install]"
 FIND_STR2="xnd"
 str_RCLOCAL="sh $FIND_RCLOCAL/xnd start &"
-
 
 
 
@@ -382,7 +381,7 @@ function Install_nginx(){
 		tar -xzf ${pwd}/nginx-1.21.3.tar.gz && cd ${pwd}/nginx-1.21.3
 		green " 编译安装..."
 		./configure --prefix=$nghm --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module
-        make -j2 
+        make -j$Nolp
         make install
         
 
@@ -611,7 +610,9 @@ fi
 		chmod +x /etc/init.d/xnd
 		chkconfig --add xnd
 		chkconfig xnd on
-fi
+
+ fi
+
 if [ "$osRelease" == "ubuntu" ]; then
     echo "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务Ubuntu"
 		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_debian -O /etc/init.d/xnd; then
@@ -630,14 +631,15 @@ fi
 echo "xxxx判断[Install]"
 if [ `grep -c "$FIND_STR" $FIND_RCSERVER` -ne '0' ];then
     echo "The File Has  [Install]!"
+echo "存在傻逼"
     else
-    echo "
+echo "不存在"
+echo "
 [Install]
 WantedBy=multi-user.target
-Alias=rc-local.service ">>/lib/systemd/system/rc-local.service
-
-sudo chmod 777 /lib/systemd/system/rc-local.service
+Alias=rc-local.service">>$FIND_RCSERVER
 fi
+sudo chmod 777 $FIND_RCSERVER
 
 
 # -f 参数判断 $file 是否存在
