@@ -80,7 +80,7 @@ nginxErrorLogFilePath="${FOLDER}/logs/error.log"
 FIND_RCSERVER="/lib/systemd/system/rc-local.service"
 FIND_RCLOCAL="/etc/rc.local"
 FIND_STR="[Install]"
-FIND_STR2="/etc/init.d/xnd"
+FIND_STR2="xnd"
 str_RCLOCAL="sh $FIND_RCLOCAL/xnd start &"
 
 
@@ -595,7 +595,9 @@ EOF
 function Service_nginx(){
 	if [[ ${release} = "centos" ]]; then
     #centos8自启
+    echo"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务centos"
     if [ $osReleaseVersionNo -eq 8 ]; then
+    echo"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务centos8"
     cat > /etc/rc.d/rc.local<<-EOF
 $nghm/sbin/nginx
 EOF
@@ -611,6 +613,7 @@ fi
 		chkconfig xnd on
 fi
 if [ "$osRelease" == "ubuntu" ]; then
+    echo "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务Ubuntu"
 		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_debian -O /etc/init.d/xnd; then
 			#red " nginx服务 管理脚本下载失败 !" && exit 1
 		#fi
@@ -619,10 +622,12 @@ if [ "$osRelease" == "ubuntu" ]; then
 		update-rc.d -f xnd defaults
 
 # -f 参数判断 $file 是否存在
+echo "xxxx参数判断 FIND_RCSERVER 是否存在"
 if [ ! -f "$FIND_RCSERVER" ]; then
   touch $FIND_RCSERVER 
 fi
 # 判断匹配函数，匹配函数不为0，则包含给定字符
+echo "xxxx判断[Install]"
 if [ `grep -c "$FIND_STR" $FIND_RCSERVER` -ne '0' ];then
     echo "The File Has  [Install]!"
     else
@@ -636,13 +641,15 @@ fi
 
 
 # -f 参数判断 $file 是否存在
+echo "参数判断$FIND_RCLOCAL 是否存在"
 if [ ! -f "$FIND_RCLOCAL" ]; then
   touch $FIND_RCLOCAL
   echo "#!/bin/bash">>$FIND_RCLOCAL
 fi
 
 # 判断匹配函数，匹配函数不为0，则包含给定字符
-if [ `grep -c "$FIND_STR2" $$FIND_RCLOCAL` -ne '0' ];then
+echo "参数判断$FIND_STR2 是否存在"
+if [ `grep -c "$FIND_STR2" $FIND_RCLOCAL` -ne '0' ];then
     echo "The File Has  [init.d]!"
     else
 echo "$str_RCLOCAL">>$FIND_RCLOCAL
