@@ -677,68 +677,6 @@ function upgradeScript(){
 
 
 
-# 软件安装
-
-function installSoftDownload(){
-	if [[ "${osRelease}" == "debian" || "${osRelease}" == "ubuntu" ]]; then
-		if ! dpkg -l | grep -qw wget; then
-			${osSystemPackage} -y install wget git unzip
-			
-			# https://stackoverflow.com/questions/11116704/check-if-vt-x-is-activated-without-having-to-reboot-in-linux
-		fi
-
-		if ! dpkg -l | grep -qw curl; then
-			${osSystemPackage} -y install curl git unzip
-		fi
-
-	elif [[ "${osRelease}" == "centos" ]]; then
-        if ! rpm -qa | grep -qw wget; then
-		    ${osSystemPackage} -y install wget curl git unzip
-        elif ! rpm -qa | grep -qw git; then
-		    ${osSystemPackage} -y install wget curl git unzip
-		fi
-	fi 
-}
-
-
-function installPackage(){
-    echo
-    green " =================================================="
-    yellow " 开始安装软件"
-    green " =================================================="
-    echo
-
-    if [ "$osRelease" == "centos" ]; then
-
-        ${osSystemPackage} update  -y
-        ${osSystemPackage} install -y gcc curl curl-devel
-        ${osSystemPackage} install -y openssl openssl-devel
-        ${osSystemPackage} install -y zlib zlib-devel pcre pcre-devel
-
-
-    elif [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then      
-        # https://joshtronic.com/2018/12/17/how-to-install-the-latest-nginx-on-debian-and-ubuntu/
-        # https://www.nginx.com/resources/wiki/start/topics/tutorials/install/   
-
-        echo "error"> a.txt
-	echo "a=============================================================================================================================a"
-        $osSystemPackage install -y wget
-	echo "a========================sssssssssssss=====================================================================================================a"
-	$osSystemPackage install -y build-essential
-	echo "a========================ssssssssssssss=====================================================================================================a"
-        $osSystemPackage install -y curl
-        $osSystemPackage install -y curl-devel
-	echo "a=============================================================================================================================a"
-        $osSystemPackage install -y libpcre3 libpcre3-dev
-	echo "a=============================================================================================================================a"
-        $osSystemPackage install -y zlib1g zlib1g-dev
-        $osSystemPackage install -y openssl libssl-dev
-
-
-        ${osSystemPackage} update -y  
-
-    fi
-}
 
 function centos6_yuminstall(){
 
@@ -1344,6 +1282,45 @@ function install_wubba(){
     install_cleanup
 }
 
+# 软件安装
+
+function installSoftDownload(){
+    echo
+    green " =================================================="
+    yellow " 开始安装软件"
+    green " =================================================="
+    echo
+ echo "=================installSoftDownload==================================================="
+	if [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then  
+    echo "===================================================================="
+            ${osSystemPackage} update -y
+    echo "=================ubuntu======debian============================================="
+			${osSystemPackage} -y install wget git unzip build-essential
+				echo "a=============================================================================================================================a"
+            ${osSystemPackage} install -y wget
+	            echo "a========================sssssssssssss=====================================================================================================a"
+	        ${osSystemPackage} install -y build-essential
+	            echo "a========================ssssssssssssss=====================================================================================================a"
+            ${osSystemPackage} install -y curl
+            ${osSystemPackage} install -y curl-devel
+	        echo "a=============================================================================================================================a"
+            ${osSystemPackage} install -y libpcre3 libpcre3-dev
+	        echo "a=============================================================================================================================a"
+            ${osSystemPackage} install -y zlib1g zlib1g-dev
+            ${osSystemPackage} install -y openssl libssl-dev
+			# https://stackoverflow.com/questions/11116704/check-if-vt-x-is-activated-without-having-to-reboot-in-linux
+		fi
+
+
+    if [ "$osRelease" == "centos" ]; then
+
+        ${osSystemPackage} update  -y
+        ${osSystemPackage} install -y gcc curl curl-devel
+        ${osSystemPackage} install -y openssl openssl-devel
+        ${osSystemPackage} install -y zlib zlib-devel pcre pcre-devel
+        fi
+}
+
 
 
 # 显示 菜单状态
@@ -1366,10 +1343,8 @@ function start_menu(){
 clear
      check_root
     getLinuxOSRelease
-    installSoftDownload
-    installPackage
 [[ ${osRelease} != "debian" ]] && [[ ${osRelease} != "ubuntu" ]] && [[ ${osRelease} != "centos" ]] && echo -e "${Error} 本脚本不支持当前系统 ${osRelease} !" && exit 1
-
+    installSoftDownload
 echo -e "\033[34m================================================================\033[0m
          \033[31m     欢迎使用矿池代理一键脚本                                     \033[0m
          \033[31m     wubba：https://t.me/joinchat/K7ES0xMvjK02YzE1，             \033[0m
