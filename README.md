@@ -1,4 +1,5 @@
-#ubuntu20.04 通过测试 其他自测
+# ubuntu20.04 通过测试 其他自测
+# Test passed "Ubuntu 20.04"
 # Introduction
 Nginx Miner Reverse Proxy
 
