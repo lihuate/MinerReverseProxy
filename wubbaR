@@ -53,12 +53,10 @@ osInfo=""
 osRelease=""
 osReleaseVersion=""
 osReleaseVersionNo=""
-osReleaseVersionNoShort=""
 osReleaseVersionCodeName="CodeName"
 osSystemPackage=""
 osSystemMdPath=""
 osSystemShell="bash"
-
 
 pwd=`pwd`
 wpt=22335
@@ -86,8 +84,6 @@ FIND_STR2="xnd"
 str_RCLOCAL="sh /etc/init.d/xnd start &"
 
 
-#centos
-FIND_CRCSERVER="/lib/systemd/system/nginx.service"
 
 Green_font_prefix="\033[32m" && Red_font_prefix="\033[31m" && Green_background_prefix="\033[42;37m" && Red_background_prefix="\033[41;37m" && Font_color_suffix="\033[0m"
 Info="${Green_font_prefix}[信息]${Font_color_suffix}"
@@ -223,10 +219,7 @@ getLinuxOSVersion(){
         osInfo=$(uname -s)
         osReleaseVersionNo=$(uname -r)
     fi
-
-    osReleaseVersionNoShort=$(echo $osReleaseVersionNo | sed 's/\..*//')
 }
-
 
 
 
@@ -349,13 +342,74 @@ function setLinuxDateZone(){
 }
 
 
+function cro_nginx_user(){
+echo    "创建Nginx运行用户"
+groupadd www
+useradd -g www www -s /sbin/nologin
+}
+
+function Install_nginx(){
+	if [[ -e ${nginxConfigPath} ]]; then
+		green " nginx 已安装 , 是否覆盖安装(更新)？[y/N]"
+		read -e -p "(默认: n):" yn
+		[[ -z ${yn} ]] && yn="n"
+		if [[ ${yn} == [Nn] ]]; then
+			echo "已取消..." && exit 1
+		fi
+	else
+		green " nginx 未安装，开始安装..."
+	fi
+
+    cro_nginx_user
+    
+    if [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then
+    osSysudo apt install build-essential -y
+    fi
+    
+    # 下载nginx文件
+    if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
+        echo "下载nginx文件失败！"
+
+            if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz http://nginx.org/download/nginx-1.21.3.tar.gz; then
+        echo "下载nginx文件失败！"
+        exit 1
+    fi
+        exit 1
+    fi
+
+		green " 解压..."
+		tar -xzf ${pwd}/nginx-1.21.3.tar.gz && cd ${pwd}/nginx-1.21.3
+		green " 编译安装..."
+		./configure --prefix=$nghm --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module
+        make -j$Nolp
+        make install
+        
+
+
+	[[ ! -e ${BIN} ]] && red " nginx 安装失败 !" && exit 1
+
+
+	echo && green " nginx 安装成功 !" && echo
+}
+
+
+
+
+
+
+
+
 
 function service_nginx_centos(){
 	cat > /etc/init.d/xnd<<-EOF
+#!/bin/bash
+# chkconfig: 2345 90 10
+# description: nginx
+
 ### BEGIN INIT INFO
 # Provides:          nginx
-# Required-Start:    \$network \$local_fs \$remote_fs
-# Required-Stop:     \$network \$local_fs \$remote_fs
+# Required-Start:    \$network \$syslog
+# Required-Stop:     \$network
 # Default-Start:     2 3 4 5
 # Default-Stop:      0 1 6
 # Short-Description: Lightweight SOCKS5 proxy tool
@@ -367,9 +421,8 @@ NAME_BIN="nginx"
 FOLDER="$nghm"
 BIN="$nghm/sbin/nginx"
 
-
 check_running(){
-	PID=\`ps -ef |grep -v grep | grep nginx |awk '{print \$2}'\`
+	PID=`PID=\`ps -ef |grep -v grep | grep nginx |awk '{print \$2}'\`
 	if [[ ! -z \${PID} ]]; then
 		return 0
 	else
@@ -379,12 +432,10 @@ check_running(){
 do_start(){
 	check_running
 	if [[ \$? -eq 0 ]]; then
-	echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME (PID \${PID}) 正在运行..." && exit 0
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME (PID ${PID}) 正在运行..." && exit 0
 	else
 		cd \${FOLDER}
-		#python_ver=\$(ls /usr/bin|grep -e "^python[23]\.[1-9]\+\$"|tail -1)
-
-		nohup  "\$BIN" &
+		nohup "\$BIN"  &
 		sleep 2s
 		check_running
 		if [[ \$? -eq 0 ]]; then
@@ -402,12 +453,12 @@ do_stop(){
 		if [[ \$RETVAL -eq 0 ]]; then
 			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 停止成功 !"
 		else
-			echo -e "\${Error_font_prefix}[错误]\${Font_suffix}\$NAME 停止失败 !"
-            killall nginx
-			echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 强行停止 !"
+			echo -e "\${Error_font_prefix}[错误]\${Font_suffix} \$NAME 停止失败 !"
+                        echo -e "\${Error_font_prefix}[错误]\${Font_suffix} \$NAME killall !"
+                        killall nginx
 		fi
 	else
-		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 未运行 !"
+		echo -e "\${Info_font_prefix}[信息]\${Font_suffix} \$NAME 未运行"
 		RETVAL=1
 	fi
 }
@@ -420,26 +471,25 @@ do_status(){
 		RETVAL=1
 	fi
 }
-
-do_reload() {
-    \$BIN -s reload
-}
-
 do_restart(){
 	do_stop
 	do_start
+}
+do_reload(){
+        \$BIN -s reload
 }
 case "\$1" in
 	start|stop|restart|status|reload)
 	do_\$1
 	;;
 	*)
-	echo "使用方法: \$0 { start | stop | restart | status | reload }"
+	echo -e "使用方法: \$0 { start | stop | restart | status reload }"
 	RETVAL=1
 	;;
 esac
 exit \$RETVAL
 EOF
+
 }
 
 
@@ -458,7 +508,7 @@ function service_nginx_debian(){
 
 NAME="nginx"
 NAME_BIN="nginx"
-FOLDER="$nghm"
+FOLDER="$nghm/"
 BIN="$nghm/sbin/nginx"
 
 
@@ -597,8 +647,7 @@ restart() {
 # 防火墙设置firewall_set_drop  firewall_set
 function firewall_set_ACCEPT(){
     echo "防火墙设置启动..."
-    #if [ `echo ${osReleaseVersionNo} | awk -v tem="6" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
-     if  [[ ${osReleaseVersionNoShort} == "6" ]]; then
+    if [ `echo ${osReleaseVersionNo} | awk -v tem="6" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         systemctl status firewalld > /dev/null 2>&1
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
@@ -636,7 +685,7 @@ function firewall_set_ACCEPT(){
         else
             echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
         fi
-    elif  [[ ${osReleaseVersionNoShort} == "7" ]]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="7" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         systemctl status firewalld > /dev/null 2>&1
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
@@ -653,7 +702,7 @@ function firewall_set_ACCEPT(){
             done
                 firewall-cmd --reload
         fi
-    elif  [[ ${osReleaseVersionNoShort} == "8" ]]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="8" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         systemctl status firewalld > /dev/null 2>&1
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
@@ -697,7 +746,7 @@ function firewall_set_ACCEPT(){
 # 防火墙设置关闭
 function firewall_set_drop(){
     echo "防火墙设置启动..."
-    if  [[ ${osReleaseVersionNoShort} == "6" ]]; then
+    if [ `echo ${osReleaseVersionNo} | awk -v tem="6" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         /etc/init.d/iptables status > /dev/null 2>&1
         if [ $? -eq 0 ]; then
             uname-a
@@ -732,7 +781,7 @@ function firewall_set_drop(){
         else
             echo "警告：iptables可能已关闭或未安装，如有必要，请手动设置."
         fi
-    elif  [[ ${osReleaseVersionNoShort} == "7" ]]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="7" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
             wp_array=($(awk '{print}' $FOLDER/wub/config.txt))
@@ -748,7 +797,7 @@ function firewall_set_drop(){
             done
                 firewall-cmd --reload
         fi        
-    elif  [[ ${osReleaseVersionNoShort} == "8" ]]; then
+    elif [ `echo ${osReleaseVersionNo} | awk -v tem="8" '{print($1>tem)? "1":"0"}'` -eq "0" ];then
         systemctl status firewalld > /dev/null 2>&1
         systemctl status firewalld > /dev/null 2>&1
         if [ $? -eq 0 ];then
@@ -1157,43 +1206,26 @@ function install_wubba(){
 
 #服务
 function Service_nginx(){
-        #centos自启
-if [[ ${osRelease} = "centos" ]]; then
-echo "============${osRelease} = "centos自启"=================================================================================="
-        service_nginx_centos
-		chmod +x /etc/init.d/xnd
- if [[ ${osReleaseVersionNoShort} == "7" || ${osReleaseVersionNoShort} == "8" ]]; then
- echo "============${osRelease} = "centos7/8自启"=================================================================================="
-echo "
-[Unit]    
-Description=nginx    
-After=network.target         
-[Service]    
-Type=forking    
-User=nginx
-Group=nginx
-ExecStart=/etc/init.d/xnd start    
-ExecReload=/etc/init.d/xnd restart    
-ExecStop=/etc/init.d/xnd  stop    
-PrivateTmp=true    
-[Install]    
-WantedBy=multi-user.target">$FIND_CRCSERVER
-
-echo "设置开机自启动"  
-chmod +x /usr/lib/systemd/system/nginx.service
-systemctl enable nginx.service
-
+	if [[ ${release} = "centos" ]]; then
+    #centos8自启
+    echo"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务centos"
+    if [ $osReleaseVersionNo -eq 8 ]; then
+    echo"xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务centos8"
+    cat > /etc/rc.d/rc.local<<-EOF
+$nghm/sbin/nginx
+EOF
+    else
+    echo "开机自启设置失败！"
 fi
-else
 		#if ! wget --no-check-certificate https://cdn.staticaly.com/gh/lihuate/MinerReverseProxy/mainnginx_centos -O /etc/init.d/xnd; then
 		#	red " nginx服务 管理脚本下载失败 !" && exit 1
 		#fi
-        #centos6
+        service_nginx_centos
+		chmod +x /etc/init.d/xnd
 		chkconfig --add xnd
 		chkconfig xnd on
-fi
 
-#=======================================================================================================
+ fi
 
 if [ "$osRelease" == "ubuntu" ]; then
     echo "xxxxxxxxxxxxxxxxxxxxxxxxxxxxx服务Ubuntu"
@@ -1255,9 +1287,11 @@ function installSoftDownload(){
     echo "===================================================================="
             ${osSystemPackage} update -y
     echo "=================ubuntu======debian============================================="
-			${osSystemPackage} -y install wget git unzip 
+			${osSystemPackage} -y install wget git unzip build-essential
 				echo "a=============================================================================================================================a"
-            ${osSystemPackage} install -y make build-essential
+            ${osSystemPackage} install -y wget
+	            echo "a========================sssssssssssss=====================================================================================================a"
+	        ${osSystemPackage} install -y build-essential
 	            echo "a========================ssssssssssssss=====================================================================================================a"
             ${osSystemPackage} install -y curl
             ${osSystemPackage} install -y curl-devel
@@ -1271,63 +1305,14 @@ function installSoftDownload(){
 
 
     if [ "$osRelease" == "centos" ]; then
-	    echo "a==============$osRelease" == "centos=更新系统===============================================================================================================a"
+
         ${osSystemPackage} update  -y
-        echo "a==============$osRelease" == "centos=make===============================================================================================================a"
-        ${osSystemPackage} install -y make
-        echo "a==============$osRelease" == "centos=make===============================================================================================================a"
-        ${osSystemPackage} install -y gcc g++
-        echo "a==============$osRelease" == "centos=make===============================================================================================================a"
-        ${osSystemPackage} install -y automake autoconf libtool
-        ${osSystemPackage} install -y curl curl-devel
+        ${osSystemPackage} install -y gcc curl curl-devel
         ${osSystemPackage} install -y openssl openssl-devel
-        ${osSystemPackage} install -y zlib zlib-devel
-        ${osSystemPackage} install -y pcre pcre-devel
-        echo "a==============$osRelease" == "centos=软件包安装结束===============================================================================================================a"
+        ${osSystemPackage} install -y zlib zlib-devel pcre pcre-devel
         fi
 }
 
-function cro_nginx_user(){
-echo    "创建Nginx运行用户"
-groupadd www
-useradd -g www www -s /sbin/nologin
-}
-
-function Install_nginx(){
-	if [[ -e ${nginxConfigPath} ]]; then
-		green " nginx 已安装 , 是否覆盖安装(更新)？[y/N]"
-		read -e -p "(默认: n):" yn
-		[[ -z ${yn} ]] && yn="n"
-		if [[ ${yn} == [Nn] ]]; then
-			echo "已取消..." && exit 1
-		fi
-	else
-		green " nginx 未安装，开始安装..."
-	fi
-
-    cro_nginx_user
-    
-    # 下载nginx文件
-    if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz https://nginx.org/download/nginx-1.21.3.tar.gz; then
-        echo "下载nginx文件失败！"
-
-            if ! wget --no-check-certificate -O ${pwd}/nginx-1.21.3.tar.gz http://nginx.org/download/nginx-1.21.3.tar.gz; then
-        echo "下载nginx文件失败！"
-        exit 1
-    fi
-        exit 1
-    fi
-
-		green " 解压..."
-		tar -xzf ${pwd}/nginx-1.21.3.tar.gz && cd ${pwd}/nginx-1.21.3
-		green " 编译安装..."
-		./configure --prefix=$nghm --user=www --group=www --with-http_ssl_module --with-http_flv_module --with-http_stub_status_module --with-http_gzip_static_module --with-pcre --with-stream --with-poll_module
-        make -j$Nolp
-        make install 
-
-	[[ ! -e ${BIN} ]] && red " nginx 安装失败 !" && exit 1
-	echo && green " nginx 安装成功 !" && echo
-}
 
 
 # 显示 菜单状态
