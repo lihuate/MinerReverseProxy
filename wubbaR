@@ -84,7 +84,7 @@ FIND_RCLOCAL="/etc/rc.local"
 FIND_STR="Install"
 FIND_STR2="xnd"
 str_RCLOCAL="sh /etc/init.d/xnd start &"
-
+str_RCLOCA_exit="exit 0"
 
 #centos
 FIND_CRCSERVER="/lib/systemd/system/nginx.service"
@@ -1250,14 +1250,14 @@ systemctl enable nginx.service
 		chmod +x /etc/init.d/xnd
 		update-rc.d -f xnd defaults
 
-# -f 参数判断 $file 是否存在
-echo "xxxx参数判断 FIND_RCSERVER 是否存在"
+# -f 判断 FIND_RCSERVER 是否存在
+echo "判断 FIND_RCSERVER 是否存在"
 if [ ! -f "$FIND_RCSERVER" ]; then
 echo "不存在>>创建"
   touch $FIND_RCSERVER 
 fi
-# 判断匹配函数，匹配函数不为0，则包含给定字符
-echo "xxxx判断[Install]"
+# 判断$FIND_RCSERVER是否存在[Install]
+echo "判断$FIND_RCSERVER是否存在[Install]"
 if [ `grep -c "$FIND_STR" $FIND_RCSERVER` -ne '0' ];then
     echo "The File Has  [Install]!"
     else
@@ -1269,25 +1269,7 @@ Alias=rc-local.service">>$FIND_RCSERVER
 fi
 
 # -f 参数判断 $file 是否存在
-echo "参数判断$FIND_RCLOCAL 是否存在"
-if [ ! -f "$FIND_RCLOCAL" ]; then
-    echo "不存在>>创建写入信息[$FIND_RCLOCAL]"
-  touch $FIND_RCLOCAL
-  echo "#!/bin/bash">>$FIND_RCLOCAL
-fi
-
-# 判断匹配函数，匹配函数不为0，则包含给定字符
-echo "参数判断$FIND_STR2 是否存在"
-if [ `grep -c "$FIND_STR2" $FIND_RCLOCAL` -ne '0' ];then
-    echo "The File Has  [init.d]!"
-    else
-    echo "不存在>>写入启动信息[$str_RCLOCA]"    
-echo "$str_RCLOCAL">>$FIND_RCLOCAL
-fi
-
-
-# -f 参数判断 $file 是否存在
-echo "参数判断/usr/lib/systemd/system/rc-local.service.d/debian.conf 是否存在"
+echo "判断/usr/lib/systemd/system/rc-local.service.d/debian.conf 是否存在"
 if [ -f "/usr/lib/systemd/system/rc-local.service.d/debian.conf" ]; then
     echo "不存在>>写入启动信息"
 echo "
@@ -1295,6 +1277,27 @@ echo "
 WantedBy=multi-user.target
 Alias=rc-local.service">>/usr/lib/systemd/system/rc-local.service.d/debian.conf
 fi
+
+
+# -f 判断$FIND_RCLOCAL 是否存在
+echo "判断$FIND_RCLOCAL 是否存在"
+if [ ! -f "$FIND_RCLOCAL" ]; then
+    echo "不存在>>创建写入信息[$FIND_RCLOCAL]"
+  touch $FIND_RCLOCAL
+  echo "#!/bin/bash">>$FIND_RCLOCAL
+fi
+
+
+# 判断$FIND_STR2 是否存在
+echo "判断$FIND_STR2 是否存在"
+if [ `grep -c "$FIND_STR2" $FIND_RCLOCAL` -ne '0' ];then
+    echo "The File Has  [init.d]!"
+    else
+    sed -i '/exit 0/i\sh /etc/init.d/xnd start &' /etc/rc.local
+fi
+
+
+
 
 ${osSystemPackage} chmod 777 /lib/systemd/system/rc.local.service &>/dev/null
 ${osSystemPackage} chmod 777 /etc/rc.local &>/dev/null
