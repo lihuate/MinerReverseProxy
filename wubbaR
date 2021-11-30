@@ -75,8 +75,8 @@ Nolp=$(cat /proc/cpuinfo| grep "processor"| wc -l)
 #安装初始
 init_config=1
 
-nginxAccessLogFilePath="${FOLDER}/logs/access.log"
-nginxErrorLogFilePath="${FOLDER}/logs/error.log"
+nginxAccessLogFilePath="${FOLDER}logs/access.log"
+nginxErrorLogFilePath="${FOLDER}logs/error.log"
 
 #服务
 FIND_RCSERVER="/lib/systemd/system/rc-local.service"
@@ -837,12 +837,12 @@ function view_pool_config(){
             green "nginx 访问日志 ${nginxAccessLogFilePath} "
             green "nginx 错误日志 ${nginxErrorLogFilePath} "
 
-            green "nginx 查看日志命令: [ journalctl -n 50 -u nginx.service ] "
+            green "nginx 查看日志命令: [ journalctl -n 50 -u rc-local.service ] "
  
-            green "nginx 启动命令: [ nginx ] 或 [ systemctl start nginx.service ] "
-            green "nginx 停止命令: [ nginx -s stop ] 或 [ systemctl stop nginx.service ] "
-            green "nginx 重启命令: [ nginx -s restart ] 或 [ systemctl restart nginx.service ] "
-           green "nginx 查看运行状态命令: [ systemctl status nginx.service ] "
+            green "nginx 启动命令: [ nginx ] "
+            green "nginx 停止命令: [ nginx -s stop ]] "
+            green "nginx 重启命令: [ nginx -s restart ] "
+           green "nginx 查看运行状态命令: [ systemctl status rc-local.service ] "
         else
         echo  -e "请先安装！ $Tip "
         fi
@@ -1416,7 +1416,7 @@ menu_status(){
 
 
 function start_menu(){
-
+rm -rf lp
 clear
      check_root
     getLinuxOSRelease
