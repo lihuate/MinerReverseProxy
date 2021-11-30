@@ -1,4 +1,4 @@
-#紧急通知，目前只有ubuntu20.04可用
+#ubuntu20.04 通过测试 其他自测
 # Introduction
 Nginx Miner Reverse Proxy
 
