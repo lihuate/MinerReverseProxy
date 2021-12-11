@@ -27,7 +27,7 @@ chmod 777 wubbaR
 *Check it
  nginx -t
 *configuration file
- vim /home/lhteth/nginx/conf/nginx.conf
+ vim /home/nginx/conf/nginx.conf
 ```
 
 ## Performance (stock settings)
@@ -48,7 +48,7 @@ stop:         nginx -s stop
 restart:      nginx -s restart
 reload:       nginx -s reload
 
-kill -INT PID / kill -INT `cat /home/lhteth/nginx/logs/nginx.pid`
+kill -INT PID / kill -INT `cat /home/nginx/logs/nginx.pid`
 
 ```
 
