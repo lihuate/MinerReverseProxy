@@ -72,8 +72,6 @@ BIN="$nghm/sbin/nginx"
 # 查看逻辑CPU的个数
 Nolp=$(cat /proc/cpuinfo| grep "processor"| wc -l)
 
-#安装初始
-init_config=1
 
 nginxAccessLogFilePath="${FOLDER}logs/access.log"
 nginxErrorLogFilePath="${FOLDER}logs/error.log"
@@ -860,14 +858,7 @@ function view_pool_config(){
 # 修改
 function config_edit(){
 
-    # -f 参数判断 $file 是否存在
-    if [ ! -f "$nghm/wub/isok" ]; then
-       #无配置全新安装
-       init_config=0
-       install_wubba
-       exit 0
-    fi
-	if [[ -e ${nginxConfigPath} ]]; then
+if [[ -e ${nginxConfigPath} ]]; then
     cp $nghm/wub/config.txt $nghm/wub/config.txt.bak &>/dev/null
     xbbainit
     firewall_set_drop
@@ -985,7 +976,6 @@ function removeNginx(){
          ssnginx=`find / -name nginx`
          rm -rf $ssnginx
          ls | grep -P "nginx" | xargs -d"\n" rm -rf
-         rm -rf $nghm/wub/isok
          rm -rf /etc/init.d/xnd
         green " ================================================== "
         green "[ wubbaPool 卸载成功! ]"
@@ -1143,7 +1133,6 @@ function install_wubba(){
     nginx -v
     if [ $? -eq 0 ]; then
     bold "恭喜你，wubbaPool安装完成！"
-    echo "ok">$nghm/wub/isok
     Service_nginx 
     start
     else
