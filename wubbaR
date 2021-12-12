@@ -1133,6 +1133,9 @@ function install_wubba(){
     bold "恭喜你，wubbaPool安装完成！"
     Service_nginx 
     start
+  if [ "$osRelease" == "centos" ]; then
+nginx
+fi
     else
         echo "wubbaPool安装失败!"
         removeNginx
