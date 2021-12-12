@@ -1115,9 +1115,7 @@ function Finishing(){
 
 # 安装
 function install_wubba(){
-    if [ $init_config -eq 1 ]; then
-    testLinuxPortUsage
-    disable_selinux
+  
     if [[ -e ${nginxConfigPath} ]]; then
     #安装前卸载
     removeNginx
@@ -1126,7 +1124,7 @@ function install_wubba(){
 
     Install_nginx
     Finishing
-    fi
+   
     config_pool_set
     config_wubba
     view_pool_config
