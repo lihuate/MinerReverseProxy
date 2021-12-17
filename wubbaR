@@ -1330,7 +1330,8 @@ function installSoftDownload(){
 
 	if [[ "$osRelease" == "ubuntu" ]] || [[ "$osRelease" == "debian" ]]; then  
              echo "a==============$osRelease" == "ubuntu===============================================================================================================a"
-            ${osSystemPackage} update -y
+            #${osSystemPackage} update -y
+	     ${osSystemPackage} gcc -y
             echo "a========================ssssssssssssss==============================================================================================================a"
 			${osSystemPackage} -y install wget git unzip 
 			echo "a========================ssssssssssssss==============================================================================================================a"
